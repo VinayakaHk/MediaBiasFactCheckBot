@@ -9,7 +9,7 @@ def print_text(obj):
         text = f"""|Metric|Rating|
     |:-|:-|
     |Bias Rating|{obj['bias']}|
-    |Factual Rating| {obj['factual']}|\n\nThis rating has been given by Media Bias Fact Check. Check out {obj['name']}`s rating [here]({obj['profile']}) for more information.  \n\n*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia) if you have any questions or concerns.*
+    |Factual Rating| {obj['factual']}|\n\nThis rating has been given by Media Bias Fact Check. Check out {obj['name']}`s rating [here]({obj['profile']}) for more information.  \n\n*I am a bot, and this action was performed automatically.  if you have any questions or concerns.*
                                         """
     else:
         text = f"""|Metric|Rating|
@@ -18,8 +18,6 @@ def print_text(obj):
         |Factual Rating| {obj['factual']}|
         |Credibility Rating|{obj['credibility']}|\n\nThis rating has been given by Media Bias Fact Check. Check out {obj['name']}`s rating [here]({obj['profile']}) for more information.
                                             \n\n*I am a bot, and this action was performed automatically. 
-                                            Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia)
-                                            if you have any questions or concerns.*
                                             """
     return text
 
@@ -51,10 +49,10 @@ def main():
         client_secret="",
         password="",
         user_agent="",
-        username="GeoIndModBot",
+        username="",
     )
 
-    subreddit = reddit.subreddit("GeopoliticsIndia")
+    subreddit = reddit.subreddit("")
     while True:
         try:
             for submission in subreddit.new(limit=20):
