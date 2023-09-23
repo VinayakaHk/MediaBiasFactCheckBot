@@ -12,7 +12,6 @@ from keep_alive import keep_alive
 keep_alive()
 load_dotenv()
 
-
 # Initialize PRAW with your credentials
 reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
                      client_secret=os.environ.get("CLIENT_SECRET"),
@@ -43,7 +42,7 @@ def print_mbfc_text(domain, obj):
 |Metric|Rating|
 |:-|:-|
 |Bias Rating|{obj['bias']}|
-|Factual Rating| {obj['factual']}|\n
+|Factual Rating| {obj['factual']}|
 """
   credibility = obj.get("credibility", "no credibility rating available")
   if credibility != "no credibility rating available":
@@ -83,18 +82,18 @@ def has_submission_statement(comment):
         comment.mod.remove()
         comment.mod.lock()
         reply = comment.reply(
-          'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please donot edit your comment and make a new one. Bots cannot re-read your edited comment'
+            'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please donot edit your comment and make a new one. Bots cannot re-read your edited comment'
         )
         reply.mod.distinguish()
         reply.mod.lock()
-        
+
       return False
   else:
     if not comment.removed:
       comment.mod.remove()
       comment.mod.lock()
       reply = comment.reply(
-        'Your Submission Statement should start with the term "SS" or "Submission Statement". Please donot edit your comment and make a new one. Bots cannot re-read your edited comment.'
+          'Your Submission Statement should start with the term "SS" or "Submission Statement". Please donot edit your comment and make a new one. Bots cannot re-read your edited comment.'
       )
       reply.mod.distinguish()
       reply.mod.lock()
@@ -107,8 +106,8 @@ def send_to_modqueue(submission):
   try:
     submission.mod.remove()
     message = submission.mod.send_removal_message(
-      message=
-      'Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" while writing a submission Statement to get your post approved. Make sure its about 3-5 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ for more information.'
+        message=
+        'Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" while writing a submission Statement to get your post approved. Make sure its about 3-5 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ for more information.'
     )
     message.mod.lock()
     return message
@@ -175,12 +174,12 @@ def monitor_submission():
               submission.removed_by)
         if submission != None and str(
             submission.id
-        ) not in IDs and submission.approved == False and submission.removed == False :
+        ) not in IDs and submission.approved == False and submission.removed == False:
           if not submission.is_self:
             print("Submission filtered : ", submission)
             f.close()
             message = send_to_modqueue(submission)
-          else :
+          else:
             if len(submission.selftext) > 200:
               approve_submission(submission)
               f.close()
@@ -204,13 +203,14 @@ def monitor_comments():
       for comment in subreddit.stream.comments():
         if (comment != None):
           print("comment: ", comment)
-          
+
           if comment.is_submitter and comment.parent_id == (
               't3_' + comment.submission.id
           ) and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
           ):
             if has_submission_statement(comment):
-              print('Submission ',comment.submission,'approved. SS Comment : ', comment)
+              print('Submission ', comment.submission,
+                    'approved. SS Comment : ', comment)
               approve_submission(comment.submission)
         time.sleep(0.5)
     except praw.exceptions.APIException as e:
