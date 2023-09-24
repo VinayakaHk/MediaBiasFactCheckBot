@@ -12,7 +12,6 @@ from keep_alive import keep_alive
 keep_alive()
 load_dotenv()
 
-
 # Initialize PRAW with your credentials
 reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
                      client_secret=os.environ.get("CLIENT_SECRET"),
@@ -43,7 +42,7 @@ def print_mbfc_text(domain, obj):
 |Metric|Rating|
 |:-|:-|
 |Bias Rating|{obj['bias']}|
-|Factual Rating| {obj['factual']}|\n
+|Factual Rating| {obj['factual']}|
 """
   credibility = obj.get("credibility", "no credibility rating available")
   if credibility != "no credibility rating available":
@@ -83,18 +82,18 @@ def has_submission_statement(comment):
         comment.mod.remove()
         comment.mod.lock()
         reply = comment.reply(
-          'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please donot edit your comment and make a new one. Bots cannot re-read your edited comment'
+            'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please donot edit your comment and make a new one. Bots cannot re-read your edited comment'
         )
         reply.mod.distinguish()
         reply.mod.lock()
-        
+
       return False
   else:
     if not comment.removed:
       comment.mod.remove()
       comment.mod.lock()
       reply = comment.reply(
-        'Your Submission Statement should start with the term "SS" or "Submission Statement". Please donot edit your comment and make a new one. Bots cannot re-read your edited comment.'
+          'Your Submission Statement should start with the term "SS" or "Submission Statement". Please donot edit your comment and make a new one. Bots cannot re-read your edited comment.'
       )
       reply.mod.distinguish()
       reply.mod.lock()
@@ -107,12 +106,12 @@ def send_to_modqueue(submission):
   try:
     submission.mod.remove()
     message = submission.mod.send_removal_message(
-      message=
-      'Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" while writing a submission Statement to get your post approved. Make sure its about 3-5 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ for more information.'
+        message=
+        'Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" while writing a submission Statement to get your post approved. Make sure its about 3-5 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ for more information.'
     )
     message.mod.lock()
     return message
-  except praw.exceptions.APIException as e:
+  except praw.exceptions.RedditAPIException as e:
     print(f"API Exception: {e}")
     time.sleep(60)
   except:
@@ -120,42 +119,81 @@ def send_to_modqueue(submission):
     time.sleep(60)
 
 
-def edit_geoind_comment(submission):
+def get_reply_text(domain, url, comment):
+  archive_links = f"""
+🔗 **Archive**:
+- [archive.Today](https://archive.is/submit/?submitid=&url={url})
+- [WayBack Machine](https://web.archive.org/web/{url})
+- [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
+"""
+
+  submission_statement = f"""
+📣 **[Submission Statement from OP]({comment.permalink})**:
+> {comment.body}
+""" if comment else ""
+
+  base_text = f"""
+---
+**Post Approved**: Your submission has been approved!
+{archive_links}
+{submission_statement}
+---
+
+🤖 This is an automated message by the r/geopoliticsIndia bot, ensuring insightful and respectful discussions in our community.
+
+📜 **Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
+"""
+
+  if domain:
+    additional_text = mbfc_political_bias(domain)
+    if additional_text:
+      base_text += "\n\n" + additional_text
+
+  footer = """
+❓ Questions or concerns? [Contact our moderators](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia).
+"""
+
+  return base_text + footer
+
+
+def edit_geoind_comment(submission, comment):
   try:
-    comments = submission.comments
-    comments.replace_more(limit=None)
-    for top_level_comment in comments:
+    submission.comments.replace_more(limit=None)
+    print("comment from edit_geoind_comment : ", comment)
+    # Delete previous comments made by the bot
+    for top_level_comment in submission.comments:
       if (top_level_comment.author == reddit.user.me()):
         top_level_comment.delete()
-    url = submission.url
-    url = str(url)
+
+    url = str(submission.url)
     domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
-    text = mbfc_political_bias(domain)
-    if text is not None:
-      reply_text = f"""Archive URL : [archive.is](https://archive.is/submit/?submitid=&url={url}) | [archive.org](https://web.archive.org/web/{url})\n\nThis is an automated message to inform you that your post has been approved by the r/geopoliticsIndia bot. We believe it contributes to the insightful and respectful discussions we strive to foster in this community.\n\n\nAs always, we kindly remind all commenters to adhere to the subreddit rules. Let’s ensure our discussions remain civil, respectful, and focused on the topic at hand. Any comments that violate these rules may be removed.""" + text + """*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia) if you have any questions or concerns.*"""
-    else:
-      reply_text = f"""Archive URL : [archive.is](https://archive.is/submit/?submitid=&url={url}) | [archive.org](https://web.archive.org/web/{url})\n\nThis is an automated message to inform you that your post has been approved by the r/geopoliticsIndia bot. We believe it contributes to the insightful and respectful discussions we strive to foster in this community.\n\n\nAs always, we kindly remind all commenters to adhere to the subreddit rules. Let’s ensure our discussions remain civil, respectful, and focused on the topic at hand. Any comments that violate these rules may be removed.""" + """\n\n\n*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia) if you have any questions or concerns.*"""
+
+    reply_text = get_reply_text(domain, url, comment)
     reply = submission.reply(reply_text)
     reply.mod.distinguish(sticky=True)
     reply.mod.lock()
-  except praw.exceptions.APIException as e:
+
+  except praw.exceptions.RedditAPIException as e:
     print(f"API Exception: {e}")
     time.sleep(60)
-  except:
-    PrintException()
+  except Exception as e:
+    # You'll need to define the 'PrintException' function elsewhere, or replace with 'print'
+    print(f"Exception: {e}")
     time.sleep(60)
 
 
 # Function to approve a submission if it has a submission statement in its comments
-def approve_submission(submission):
+
+
+def approve_submission(submission, comment=None):
   try:
     f = open('removed.txt', 'a')
     f.write(str(submission.id) + '\n')
     f.close()
 
     submission.mod.approve()
-    edit_geoind_comment(submission)
-  except praw.exceptions.APIException as e:
+    edit_geoind_comment(submission, comment)
+  except praw.exceptions.RedditAPIException as e:
     print(f"API Exception: {e}")
     time.sleep(60)
   except:
@@ -175,12 +213,12 @@ def monitor_submission():
               submission.removed_by)
         if submission != None and str(
             submission.id
-        ) not in IDs and submission.approved == False and submission.removed == False :
+        ) not in IDs and submission.approved == False and submission.removed == False:
           if not submission.is_self:
             print("Submission filtered : ", submission)
             f.close()
             message = send_to_modqueue(submission)
-          else :
+          else:
             if len(submission.selftext) > 200:
               approve_submission(submission)
               f.close()
@@ -189,7 +227,7 @@ def monitor_submission():
               f.close()
               message = send_to_modqueue(submission)
         time.sleep(0.5)
-    except praw.exceptions.APIException as e:
+    except praw.exceptions.RedditAPIException as e:
       print(f"API Exception: {e}")
       time.sleep(60)
     except:
@@ -204,16 +242,16 @@ def monitor_comments():
       for comment in subreddit.stream.comments():
         if (comment != None):
           print("comment: ", comment)
-          
           if comment.is_submitter and comment.parent_id == (
               't3_' + comment.submission.id
           ) and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
           ):
             if has_submission_statement(comment):
-              print('Submission ',comment.submission,'approved. SS Comment : ', comment)
-              approve_submission(comment.submission)
-        time.sleep(0.5)
-    except praw.exceptions.APIException as e:
+              print('Submission ', comment.submission,
+                    'approved. SS Comment : ', comment)
+              approve_submission(comment.submission, comment)
+
+    except praw.exceptions.RedditAPIException as e:
       print(f"API Exception: {e}")
       time.sleep(60)
     except:
