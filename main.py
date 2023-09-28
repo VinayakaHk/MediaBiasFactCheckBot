@@ -119,6 +119,17 @@ def send_to_modqueue(submission):
     time.sleep(60)
 
 
+def add_prefix_to_paragraphs(input_string):
+  # Use regular expression to match multiple consecutive newline characters
+  # and replace them with just two newline characters
+  formatted_string = re.sub(r'\n+', '\n\n', input_string)
+
+  # Add "> " to the start of each paragraph
+  formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
+
+  return formatted_string
+
+
 def get_reply_text(domain, url, comment):
   archive_links = f"""
 🔗 **Archive**:
@@ -126,10 +137,11 @@ def get_reply_text(domain, url, comment):
 - [WayBack Machine](https://web.archive.org/web/{url})
 - [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
 """
+  formatted_string = add_prefix_to_paragraphs(comment.body)
 
   submission_statement = f"""
 📣 **[Submission Statement from OP]({comment.permalink})**:
-> {comment.body}
+> {formatted_string}
 """ if comment else ""
 
   base_text = f"""
