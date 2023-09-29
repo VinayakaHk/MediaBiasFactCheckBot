@@ -133,9 +133,10 @@ def add_prefix_to_paragraphs(input_string):
 def get_reply_text(domain, url, comment):
   archive_links = f"""
 🔗 **Archive**:
-- [archive.Today](https://archive.is/submit/?submitid=&url={url})
-- [WayBack Machine](https://web.archive.org/web/{url})
-- [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
+* [archive.today](https://archive.is/submit/?submitid=&url={url}) 
+* [archive.today for Reddit App users](https://archive.is/{url})
+* [WayBack Machine](https://web.archive.org/web/{url})
+* [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
 """
   formatted_string = add_prefix_to_paragraphs(comment.body)
 
