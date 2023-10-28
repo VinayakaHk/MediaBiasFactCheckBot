@@ -133,8 +133,7 @@ def add_prefix_to_paragraphs(input_string):
 def get_reply_text(domain, url, comment):
   archive_links = f"""
 🔗 **Archive**:
-* [archive.today](https://archive.is/submit/?submitid=&url={url}) 
-* [archive.today for Reddit App users](https://archive.is/{url})
+* [archive.today](https://archive.is/submit/?submitid=&url={url})
 * [WayBack Machine](https://web.archive.org/web/{url})
 * [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
 """
@@ -198,9 +197,6 @@ def edit_geoind_comment(submission, comment):
 
 def approve_submission(submission, comment=None):
   try:
-    f = open('removed.txt', 'a')
-    f.write(str(submission.id) + '\n')
-    f.close()
 
     submission.mod.approve()
     edit_geoind_comment(submission, comment)
@@ -217,25 +213,22 @@ def monitor_submission():
   while True:
     try:
       print('monitor_submission:')
-      f = open('removed.txt', 'r')
-      IDs = f.readlines()
+
       for submission in subreddit.stream.submissions():
         print("Submission : ", submission, "Approved : ", submission.approved,
               submission.removed_by)
-        if submission != None and str(
-            submission.id
-        ) not in IDs and submission.approved == False and submission.removed == False:
+        if submission != None and submission.approved == False and submission.removed == False:
           if not submission.is_self:
             print("Submission filtered : ", submission)
-            f.close()
+
             message = send_to_modqueue(submission)
           else:
             if len(submission.selftext) > 200:
               approve_submission(submission)
-              f.close()
+
             else:
               print("Self Text filtered : ", submission)
-              f.close()
+
               message = send_to_modqueue(submission)
         time.sleep(0.5)
     except praw.exceptions.RedditAPIException as e:
