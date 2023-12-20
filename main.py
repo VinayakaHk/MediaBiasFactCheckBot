@@ -1,14 +1,20 @@
-import praw
-import time
-# import multiprocessing
+
+from pymongo.errors import ConnectionFailure, PyMongoError
+from pymongo import MongoClient
 from dotenv import load_dotenv
-import os
-import re
-import json
-import linecache
-import sys
-from keep_alive import keep_alive
 from concurrent.futures import ThreadPoolExecutor
+import time
+import sys
+import linecache
+import json
+import re
+import os
+import praw
+
+from src import mongodb
+from keep_alive import keep_alive
+
+sys.path.append("./src/")
 
 keep_alive()
 load_dotenv()
@@ -54,18 +60,22 @@ def print_mbfc_text(domain, obj):
 
 
 def mbfc_political_bias(domain_url):
+    print('domain_url: ', domain_url)
     try:
         if not hasattr(mbfc_political_bias, "data"):
-            with open('MBFC.json', 'r') as mbfc_file:
+            with open('./docs/MBFC_modified.json', 'r') as mbfc_file:
                 mbfc_political_bias.data = json.load(mbfc_file)
 
         for i in mbfc_political_bias.data:
             if not i['url'] == "no url available":
                 url = i['url']
-                domain = re.search(
-                    'https?://([A-Za-z_0-9.-]+).*', url).group(1)
-                if domain == domain_url:
-                    text = print_mbfc_text(domain, i)
+                url_without_protocol = re.sub(r'https?://', '', url)
+
+                # Remove trailing slash
+                domain_match = re.search(
+                    r'([A-Za-z_0-9.-]+)', url_without_protocol)
+                if domain_match.group(1) == domain_url:
+                    text = print_mbfc_text(domain_match.group(1), i)
                     return text
         return None
     except:
@@ -85,7 +95,7 @@ def has_submission_statement(comment):
                 comment.mod.remove()
                 comment.mod.lock()
                 reply = comment.reply(
-                    'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please donot edit your comment and make a new one. Bots cannot re-read your edited comment'
+                    'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment'
                 )
                 reply.mod.distinguish()
                 reply.mod.lock()
@@ -96,7 +106,7 @@ def has_submission_statement(comment):
             comment.mod.remove()
             comment.mod.lock()
             reply = comment.reply(
-                'Your Submission Statement should start with the term "SS" or "Submission Statement". Please donot edit your comment and make a new one. Bots cannot re-read your edited comment.'
+                'Your Submission Statement should start with the term "SS" or "Submission Statement" (without the " ").  Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment.'
             )
             reply.mod.distinguish()
             reply.mod.lock()
@@ -109,7 +119,7 @@ def send_to_modqueue(submission):
     try:
         submission.mod.remove()
         message = submission.mod.send_removal_message(
-            message='Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" while writing a submission Statement to get your post approved. Make sure its about 3-5 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ for more information.'
+            message='Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 3-5 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ .'
         )
         message.mod.lock()
         return message
@@ -124,10 +134,11 @@ def send_to_modqueue(submission):
 def add_prefix_to_paragraphs(input_string):
     # Use regular expression to match multiple consecutive newline characters
     # and replace them with just two newline characters
-    formatted_string = re.sub(r'\n+', '\n\n', input_string)
+    formatted_string = re.sub(r'\n+', '\n>\n', input_string)
 
     # Add "> " to the start of each paragraph
-    formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
+    # formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
+    formatted_string = re.sub(r'(?<=\n)(?=[^\n])', "> ", formatted_string)
 
     return formatted_string
 
@@ -190,8 +201,7 @@ def edit_geoind_comment(submission, comment):
         print(f"API Exception: {e}")
         time.sleep(60)
     except Exception as e:
-        # You'll need to define the 'PrintException' function elsewhere, or replace with 'print'
-        print(f"Exception: {e}")
+        PrintException()
         time.sleep(60)
 
 
@@ -277,11 +287,6 @@ def main():
                 f"Error in monitor_submission: {future_submission.exception()}")
         if future_comments.exception():
             print(f"Error in monitor_comments: {future_comments.exception()}")
-
-            # process_submission = multiprocessing.Process(target=monitor_submission)
-            # process_submission.start()
-            # process_comments = multiprocessing.Process(target=monitor_comments)
-            # process_comments.start()
     except KeyboardInterrupt:
         print('Monitoring stopped.')
         exit()
