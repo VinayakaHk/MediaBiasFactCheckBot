@@ -3,6 +3,7 @@ from pymongo.errors import ConnectionFailure, PyMongoError
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
+
 import time
 import sys
 import linecache
@@ -10,8 +11,9 @@ import json
 import re
 import os
 import praw
+import pprint
 
-from src import mongodb
+from src.mongodb import client
 from keep_alive import keep_alive
 
 sys.path.append("./src/")
@@ -55,30 +57,26 @@ def print_mbfc_text(domain, obj):
     if credibility != "no credibility rating available":
         text += f"|Credibility Rating|{obj['credibility']}|\n"
 
-    text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {obj['name']}'s review [here]({obj['profile']})."""
+    text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {
+        obj['name']}'s review [here]({obj['profile']})."""
     return text
 
 
 def mbfc_political_bias(domain_url):
-    print('domain_url: ', domain_url)
     try:
-        if not hasattr(mbfc_political_bias, "data"):
-            with open('./docs/MBFC_modified.json', 'r') as mbfc_file:
-                mbfc_political_bias.data = json.load(mbfc_file)
+        with open('./docs/MBFC_modified.json', 'r') as mbfc_file:
+            mbfc_data = json.load(mbfc_file)
+        url_index = {entry["url"]: entry for entry in mbfc_data}
 
-        for i in mbfc_political_bias.data:
-            if not i['url'] == "no url available":
-                url = i['url']
-                url_without_protocol = re.sub(r'https?://', '', url)
+        if domain_url in url_index:
+            retrieved_data = url_index[domain_url]
+            text = print_mbfc_text(retrieved_data['url'], retrieved_data)
+            return text
+        else:
+            print("URL not found in the index")
+            return None
 
-                # Remove trailing slash
-                domain_match = re.search(
-                    r'([A-Za-z_0-9.-]+)', url_without_protocol)
-                if domain_match.group(1) == domain_url:
-                    text = print_mbfc_text(domain_match.group(1), i)
-                    return text
-        return None
-    except:
+    except Exception as e:
         PrintException()
 
 
@@ -119,7 +117,7 @@ def send_to_modqueue(submission):
     try:
         submission.mod.remove()
         message = submission.mod.send_removal_message(
-            message='Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 3-5 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ .'
+            message='Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 2-3 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ .'
         )
         message.mod.lock()
         return message
@@ -137,8 +135,8 @@ def add_prefix_to_paragraphs(input_string):
     formatted_string = re.sub(r'\n+', '\n>\n', input_string)
 
     # Add "> " to the start of each paragraph
-    # formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
-    formatted_string = re.sub(r'(?<=\n)(?=[^\n])', "> ", formatted_string)
+    formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
+    # formatted_string = re.sub(r'(?<=\n)(?=[^\n])', "> ", formatted_string)
 
     return formatted_string
 
@@ -227,6 +225,7 @@ def monitor_submission():
             print('monitor_submission:')
 
             for submission in subreddit.stream.submissions():
+                # pprint.pprint(submission.__dict__)
                 print("Submission : ", submission, "Approved : ", submission.approved,
                       submission.removed_by)
                 if submission != None and submission.approved == False and submission.removed == False:
