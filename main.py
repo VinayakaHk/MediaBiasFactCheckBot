@@ -16,7 +16,6 @@ import pprint
 from src.mongodb import client
 from keep_alive import keep_alive
 from src.gemini import gemini_detection
-sys.path.append("./src/")
 
 keep_alive()
 load_dotenv()
