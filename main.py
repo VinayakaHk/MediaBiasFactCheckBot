@@ -15,12 +15,16 @@ import pprint
 
 from src.mongodb import client
 from keep_alive import keep_alive
-
+from src.gemini import gemini_detection
 sys.path.append("./src/")
 
 keep_alive()
 load_dotenv()
 
+
+whitelisted_authors_from_Gemini = [
+    'AutoModerator', 'GeoIndModBot', 'empleadoEstatalBot'
+]
 # Initialize PRAW with your credentials
 reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
                      client_secret=os.environ.get("CLIENT_SECRET"),
@@ -33,6 +37,7 @@ reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
 subreddit_name = os.environ.get('SUBREDDIT')
 subreddit = reddit.subreddit(subreddit_name)
 print('subreddit ', subreddit)
+mod_mail = subreddit.modmail
 
 
 def PrintException():
@@ -218,7 +223,6 @@ def approve_submission(submission, comment=None):
         time.sleep(60)
 
 
-# Function to monitor a single submission and wait for the author to add a submission statement
 def monitor_submission():
     while True:
         try:
@@ -239,7 +243,6 @@ def monitor_submission():
 
                         else:
                             print("Self Text filtered : ", submission)
-
                             message = send_to_modqueue(submission)
                 time.sleep(0.5)
         except praw.exceptions.RedditAPIException as e:
@@ -267,6 +270,13 @@ def monitor_comments():
                             print('Submission ', comment.submission,
                                   'approved. SS Comment : ', comment)
                             approve_submission(comment.submission, comment)
+                    if (comment.author not in whitelisted_authors_from_Gemini):
+                        json_output = gemini_detection(comment.body)
+                        print(json_output)
+                        parsed_data = json.loads(json_output)
+                        if parsed_data['answer'] == 'yes':
+                            mod_mail.create(
+                                subject="Rule breaking comment detected", body=f"Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {comment.body}\n\nBots reason for removal: {parsed_data['reason']}", recipient=os.environ.get('SUBREDDIT'))
 
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
