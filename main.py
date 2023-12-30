@@ -275,7 +275,7 @@ def monitor_comments():
                             mod_mail.create(
                                 subject="Rule breaking comment detected",
                                 body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                    comment.body}\n\nComment Link : {comment.link} \n\nBots reason for removal: {parsed_data['reason']}""",
+                                    comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_data['reason']}""",
                                 recipient=os.environ.get('SUBREDDIT'))
 
         except praw.exceptions.RedditAPIException as e:
