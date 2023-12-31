@@ -43,7 +43,9 @@ def gemini_detection(input_string):
         % (os.environ.get('SUBREDDIT'), input_string),
     ]
     response = model.generate_content(prompt_parts)
-    if response.parts:
+    if (response.prompt_feedback.block_reason):
+        return ('{"answer": "yes", "reason": "The comment was not parsed by Gemini because of safety reasons"}')
+    if (response.text):
         return (response.text)
     else:
-        return ({"answer": "yes", "reason": "The comment was not parsed by Gemini because it was too Harmful"})
+        return ('{"answer": "no", "reason": "API ERROR"}')

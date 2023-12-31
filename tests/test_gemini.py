@@ -1,6 +1,9 @@
 import os
 import praw
 import google.generativeai as genai
+import time
+import json
+
 from dotenv import load_dotenv
 load_dotenv()
 genai.configure(api_key=os.environ.get("GEMINI"))
@@ -15,8 +18,9 @@ reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
 subreddit_name = os.environ.get('SUBREDDIT')
 subreddit = reddit.subreddit(subreddit_name)
 print('subreddit ', subreddit)
-
-
+whitelisted_authors_from_Gemini = [
+    'AutoModerator', 'GeoIndModBot', 'empleadoEstatalBot', 'GeopoliticsIndia-ModTeam', 'AmputatorBot'
+]
 # Set up the model
 generation_config = {
     "temperature": 0.9,
@@ -55,7 +59,12 @@ def gemini_detection(input_string):
             os.environ.get('SUBREDDIT'), input_string),
     ]
     response = model.generate_content(prompt_parts)
-    return (response.text)
+    if (response.prompt_feedback.block_reason):
+        return ('{"answer": "yes", "reason": "The comment was not parsed by Gemini because of safety reasons"}')
+    if (response.text):
+        return (response.text)
+    else:
+        return ('{"answer": "no", "reason": "API ERROR"}')
 
 
 def monitor_comments():
@@ -64,14 +73,18 @@ def monitor_comments():
             print('monitor_comments:')
             for comment in subreddit.stream.comments():
                 if (comment != None):
-                    print("comment: ", comment)
-                    json_output = gemini_detection(comment.body)
-                    print(json_output)
+                    if not comment.removed and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini):
+                        json_output = gemini_detection(comment.body)
+                        print(json_output)
+                        parsed_data = json.loads(json_output)
+                        if parsed_data['answer'] == 'yes':
+                            print(f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_data['reason']}""")
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
             time.sleep(60)
-        except:
-            PrintException()
+        except Exception as e:
+            print(e)
             time.sleep(60)
 
 

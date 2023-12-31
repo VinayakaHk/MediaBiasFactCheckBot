@@ -20,7 +20,7 @@ keep_alive()
 load_dotenv()
 
 whitelisted_authors_from_Gemini = [
-    'AutoModerator', 'GeoIndModBot', 'empleadoEstatalBot'
+    'AutoModerator', 'GeoIndModBot', 'empleadoEstatalBot', 'GeopoliticsIndia-ModTeam', 'AmputatorBot'
 ]
 # Initialize PRAW with your credentials
 reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
@@ -38,275 +38,276 @@ mod_mail = subreddit.modmail
 
 
 def PrintException():
-  exc_type, exc_obj, tb = sys.exc_info()
-  f = tb.tb_frame
-  lineno = tb.tb_lineno
-  filename = f.f_code.co_filename
-  linecache.checkcache(filename)
-  line = linecache.getline(filename, lineno, f.f_globals)
-  print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno,
-                                                     line.strip(), exc_obj))
+    exc_type, exc_obj, tb = sys.exc_info()
+    f = tb.tb_frame
+    lineno = tb.tb_lineno
+    filename = f.f_code.co_filename
+    linecache.checkcache(filename)
+    line = linecache.getline(filename, lineno, f.f_globals)
+    print('EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno,
+                                                       line.strip(), exc_obj))
 
 
 def print_mbfc_text(domain, obj):
-  text = f"""\n\n**📰 Media Bias fact Check Rating :**  \n\n\n\n
-  |Metric|Rating|
-  |:-|:-|
-  |Bias Rating|{obj['bias']}|
-  |Factual Rating| {obj['factual']}|
-  """
-  credibility = obj.get("credibility", "no credibility rating available")
-  if credibility != "no credibility rating available":
-    text += f"|Credibility Rating|{obj['credibility']}|\n"
+    text = f"""\n\n**📰 Media Bias fact Check Rating :**  \n\n\n\n
+    |Metric|Rating|
+    |:-|:-|
+    |Bias Rating|{obj['bias']}|
+    |Factual Rating| {obj['factual']}|
+    """
+    credibility = obj.get("credibility", "no credibility rating available")
+    if credibility != "no credibility rating available":
+        text += f"|Credibility Rating|{obj['credibility']}|\n"
 
-  text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {
+    text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {
         obj['name']}'s review [here]({obj['profile']})."""
-  return text
+    return text
 
 
 def mbfc_political_bias(domain_url):
-  try:
-    with open('./docs/MBFC_modified.json', 'r') as mbfc_file:
-      mbfc_data = json.load(mbfc_file)
-    url_index = {entry["url"]: entry for entry in mbfc_data}
+    try:
+        with open('./docs/MBFC_modified.json', 'r') as mbfc_file:
+            mbfc_data = json.load(mbfc_file)
+        url_index = {entry["url"]: entry for entry in mbfc_data}
 
-    if domain_url in url_index:
-      retrieved_data = url_index[domain_url]
-      text = print_mbfc_text(retrieved_data['url'], retrieved_data)
-      return text
-    else:
-      print("URL not found in the index")
-      return None
+        if domain_url in url_index:
+            retrieved_data = url_index[domain_url]
+            text = print_mbfc_text(retrieved_data['url'], retrieved_data)
+            return text
+        else:
+            print("URL not found in the index")
+            return None
 
-  except Exception as e:
-    PrintException()
+    except Exception as e:
+        PrintException()
 
 
 # Function to check if a submission contains a submission statement in its comments
 def has_submission_statement(comment):
 
-  lower_comment_body = comment.body.lower()
-  if lower_comment_body.startswith(
-      "submission statement") or lower_comment_body.startswith("ss"):
-    if len(comment.body) > 150:
-      return True
-    else:
-      if not comment.removed:
-        comment.mod.remove()
-        comment.mod.lock()
-        reply = comment.reply(
-            'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment'
-        )
-        reply.mod.distinguish()
-        reply.mod.lock()
+    lower_comment_body = comment.body.lower()
+    if lower_comment_body.startswith(
+            "submission statement") or lower_comment_body.startswith("ss"):
+        if len(comment.body) > 150:
+            return True
+        else:
+            if not comment.removed:
+                comment.mod.remove()
+                comment.mod.lock()
+                reply = comment.reply(
+                    'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment'
+                )
+                reply.mod.distinguish()
+                reply.mod.lock()
 
-      return False
-  else:
-    if not comment.removed:
-      comment.mod.remove()
-      comment.mod.lock()
-      reply = comment.reply(
-          'Your Submission Statement should start with the term "SS" or "Submission Statement" (without the " ").  Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment.'
-      )
-      reply.mod.distinguish()
-      reply.mod.lock()
-      return False
-  return False
+            return False
+    else:
+        if not comment.removed:
+            comment.mod.remove()
+            comment.mod.lock()
+            reply = comment.reply(
+                'Your Submission Statement should start with the term "SS" or "Submission Statement" (without the " ").  Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment.'
+            )
+            reply.mod.distinguish()
+            reply.mod.lock()
+            return False
+    return False
 
 
 # Function to send a submission to the modqueue
 def send_to_modqueue(submission):
-  try:
-    submission.mod.remove()
-    message = submission.mod.send_removal_message(
-        message=
-        'Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 2-3 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ .'
-    )
-    message.mod.lock()
-    return message
-  except praw.exceptions.RedditAPIException as e:
-    print(f"API Exception: {e}")
-    time.sleep(60)
-  except:
-    PrintException()
-    time.sleep(60)
+    try:
+        submission.mod.remove()
+        message = submission.mod.send_removal_message(
+            message='Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 2-3 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ .'
+        )
+        message.mod.lock()
+        return message
+    except praw.exceptions.RedditAPIException as e:
+        print(f"API Exception: {e}")
+        time.sleep(60)
+    except:
+        PrintException()
+        time.sleep(60)
 
 
 def add_prefix_to_paragraphs(input_string):
-  # Use regular expression to match multiple consecutive newline characters
-  # and replace them with just two newline characters
-  formatted_string = re.sub(r'\n+', '\n>\n', input_string)
+    # Use regular expression to match multiple consecutive newline characters
+    # and replace them with just two newline characters
+    formatted_string = re.sub(r'\n+', '\n>\n', input_string)
 
-  # Add "> " to the start of each paragraph
-  formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
-  # formatted_string = re.sub(r'(?<=\n)(?=[^\n])', "> ", formatted_string)
+    # Add "> " to the start of each paragraph
+    formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
+    # formatted_string = re.sub(r'(?<=\n)(?=[^\n])', "> ", formatted_string)
 
-  return formatted_string
+    return formatted_string
 
 
 def get_reply_text(domain, url, comment=None):
-  archive_links = f"""
-  🔗 **Archive**:
-  * [archive.today](https://archive.is/submit/?submitid=&url={url})
-  * [WayBack Machine](https://web.archive.org/web/{url})
-  * [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
-  """
-  formatted_string = add_prefix_to_paragraphs(comment.body) if comment else ""
+    archive_links = f"""
+    🔗 **Archive**:
+    * [archive.today](https://archive.is/submit/?submitid=&url={url})
+    * [WayBack Machine](https://web.archive.org/web/{url})
+    * [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
+    """
+    formatted_string = add_prefix_to_paragraphs(
+        comment.body) if comment else ""
 
-  submission_statement = f"""
-  📣 **[Submission Statement from OP]({comment.permalink})**:
-  > {formatted_string}
-  """ if comment else ""
+    submission_statement = f"""
+    📣 **[Submission Statement from OP]({comment.permalink})**:
+    > {formatted_string}
+    """ if comment else ""
 
-  base_text = f"""
-  ---
-  **Post Approved**: Your submission has been approved!
-  {archive_links}
-  {submission_statement}
-  ---
+    base_text = f"""
+    ---
+    **Post Approved**: Your submission has been approved!
+    {archive_links}
+    {submission_statement}
+    ---
 
-  📜 **Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
-  """
+    📜 **Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
+    """
 
-  if domain:
-    additional_text = mbfc_political_bias(domain)
-    if additional_text:
-      base_text += "\n\n" + additional_text
+    if domain:
+        additional_text = mbfc_political_bias(domain)
+        if additional_text:
+            base_text += "\n\n" + additional_text
 
-  footer = """\n
+    footer = """\n
 ❓ Questions or concerns? [Contact our moderators](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia).
 """
 
-  return base_text + footer
+    return base_text + footer
 
 
 def edit_geoind_comment(submission, comment):
-  try:
-    submission.comments.replace_more(limit=None)
-    print("comment from edit_geoind_comment : ", comment)
-    # Delete previous comments made by the bot
-    for top_level_comment in submission.comments:
-      if (top_level_comment.author == reddit.user.me()):
-        top_level_comment.delete()
+    try:
+        submission.comments.replace_more(limit=None)
+        print("comment from edit_geoind_comment : ", comment)
+        # Delete previous comments made by the bot
+        for top_level_comment in submission.comments:
+            if (top_level_comment.author == reddit.user.me()):
+                top_level_comment.delete()
 
-    url = str(submission.url)
-    domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
+        url = str(submission.url)
+        domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
 
-    reply_text = get_reply_text(domain, url, comment)
-    reply = submission.reply(reply_text)
-    reply.mod.distinguish(sticky=True)
-    reply.mod.lock()
+        reply_text = get_reply_text(domain, url, comment)
+        reply = submission.reply(reply_text)
+        reply.mod.distinguish(sticky=True)
+        reply.mod.lock()
 
-  except praw.exceptions.RedditAPIException as e:
-    print(f"API Exception: {e}")
-    time.sleep(60)
-  except Exception as e:
-    PrintException()
-    time.sleep(60)
+    except praw.exceptions.RedditAPIException as e:
+        print(f"API Exception: {e}")
+        time.sleep(60)
+    except Exception as e:
+        PrintException()
+        time.sleep(60)
 
 
 # Function to approve a submission if it has a submission statement in its comments
 
 
 def approve_submission(submission, comment=None):
-  try:
-    submission.mod.approve()
-    edit_geoind_comment(submission, comment)
-  except praw.exceptions.RedditAPIException as e:
-    print(f"API Exception: {e}")
-    time.sleep(60)
-  except:
-    PrintException()
-    time.sleep(60)
+    try:
+        submission.mod.approve()
+        edit_geoind_comment(submission, comment)
+    except praw.exceptions.RedditAPIException as e:
+        print(f"API Exception: {e}")
+        time.sleep(60)
+    except:
+        PrintException()
+        time.sleep(60)
 
 
 def monitor_submission():
-  while True:
-    try:
-      print('monitor_submission:')
+    while True:
+        try:
+            print('monitor_submission:')
 
-      for submission in subreddit.stream.submissions():
-        # pprint.pprint(submission.__dict__)
-        print("Submission : ", submission, "Approved : ", submission.approved,
-              submission.removed_by)
-        if submission != None and submission.approved == False and submission.removed == False:
-          if not submission.is_self:
-            print("Submission filtered : ", submission)
+            for submission in subreddit.stream.submissions():
+                # pprint.pprint(submission.__dict__)
+                print("Submission : ", submission, "Approved : ", submission.approved,
+                      submission.removed_by)
+                if submission != None and submission.approved == False and submission.removed == False:
+                    if not submission.is_self:
+                        print("Submission filtered : ", submission)
 
-            message = send_to_modqueue(submission)
-          else:
-            if len(submission.selftext) > 200:
-              approve_submission(submission)
+                        message = send_to_modqueue(submission)
+                    else:
+                        if len(submission.selftext) > 200:
+                            approve_submission(submission)
 
-            else:
-              print("Self Text filtered : ", submission)
-              message = send_to_modqueue(submission)
-        time.sleep(0.5)
-    except praw.exceptions.RedditAPIException as e:
-      print(f"API Exception: {e}")
-      time.sleep(60)
-    except:
-      PrintException()
-      time.sleep(60)
+                        else:
+                            print("Self Text filtered : ", submission)
+                            message = send_to_modqueue(submission)
+                time.sleep(0.5)
+        except praw.exceptions.RedditAPIException as e:
+            print(f"API Exception: {e}")
+            time.sleep(60)
+        except:
+            PrintException()
+            time.sleep(60)
 
 
 def monitor_comments():
-  while True:
-    try:
-      print('monitor_comments:')
-      for comment in subreddit.stream.comments():
-        if (comment != None):
-          print("comment: ", comment)
-          if comment.author == "empleadoEstatalBot":
-            comment.mod.approve()
-          if comment.is_submitter and comment.parent_id == (
-              't3_' + comment.submission.id
-          ) and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
-          ):
-            if has_submission_statement(comment):
-              print('Submission ', comment.submission,
-                    'approved. SS Comment : ', comment)
-              approve_submission(comment.submission, comment)
-          if (comment.author not in whitelisted_authors_from_Gemini):
-            json_output = gemini_detection(comment.body)
-            print(json_output)
-            parsed_data = json.loads(json_output)
-            if parsed_data['answer'] == 'yes':
-              mod_mail.create(
-                  subject="Rule breaking comment detected",
-                  body=
-                  f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+    while True:
+        try:
+            print('monitor_comments:')
+            for comment in subreddit.stream.comments():
+                if (comment != None):
+                    print("comment: ", comment)
+                    if comment.author == "empleadoEstatalBot":
+                        comment.mod.approve()
+                    if comment.is_submitter and comment.parent_id == (
+                        't3_' + comment.submission.id
+                    ) and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
+                    ):
+                        if has_submission_statement(comment):
+                            print('Submission ', comment.submission,
+                                  'approved. SS Comment : ', comment)
+                            approve_submission(comment.submission, comment)
+                    if comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini):
+                        comment.save()
+                        json_output = gemini_detection(comment.body)
+                        parsed_data = json.loads(json_output)
+                        if parsed_data['answer'] == 'yes':
+                            mod_mail.create(
+                                subject="Rule breaking comment detected",
+                                body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
                                     comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_data['reason']}""",
-                  recipient=os.environ.get('SUBREDDIT'))
+                                recipient=os.environ.get('SUBREDDIT'))
 
-    except praw.exceptions.RedditAPIException as e:
-      print(f"API Exception: {e}")
-      time.sleep(60)
-    except:
-      PrintException()
-      time.sleep(60)
+        except praw.exceptions.RedditAPIException as e:
+            print(f"API Exception: {e}")
+            time.sleep(60)
+        except:
+            PrintException()
+            time.sleep(60)
 
 
 def main():
-  try:
-    with ThreadPoolExecutor(max_workers=2) as executor:
-      future_submission = executor.submit(monitor_submission)
-      future_comments = executor.submit(monitor_comments)
-    if future_submission.exception():
-      print(f"""Error in monitor_submission{future_submission.exception()}""")
-    if future_comments.exception():
-      print(f"""Error in monitor_comments: {future_comments.exception()}""")
-  except KeyboardInterrupt:
-    print('Monitoring stopped.')
-    exit()
-  except:
-    print("Error ")
-    process_submission.terminate()
-    process_comments.terminate()
-    time.sleep(60)
-    process_submission.start()
-    process_comments.start()
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_submission = executor.submit(monitor_submission)
+            future_comments = executor.submit(monitor_comments)
+        if future_submission.exception():
+            print(f"""Error in monitor_submission{
+                  future_submission.exception()}""")
+        if future_comments.exception():
+            print(f"""Error in monitor_comments: {
+                  future_comments.exception()}""")
+    except KeyboardInterrupt:
+        print('Monitoring stopped.')
+        exit()
+    except:
+        print("Error ")
+        process_submission.terminate()
+        process_comments.terminate()
+        time.sleep(60)
+        process_submission.start()
+        process_comments.start()
 
 
 if __name__ == '__main__':
-  main()
+    main()
