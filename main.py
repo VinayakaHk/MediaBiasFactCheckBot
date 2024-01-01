@@ -11,12 +11,8 @@ import re
 import os
 import praw
 # import pprint
-
 # from src.mongodb import client
-from keep_alive import keep_alive
 from src.gemini import gemini_detection
-
-keep_alive()
 load_dotenv()
 
 whitelisted_authors_from_Gemini = [
@@ -50,11 +46,11 @@ def PrintException():
 
 def print_mbfc_text(domain, obj):
     text = f"""\n\n**📰 Media Bias fact Check Rating :**  \n\n\n\n
-    |Metric|Rating|
-    |:-|:-|
-    |Bias Rating|{obj['bias']}|
-    |Factual Rating| {obj['factual']}|
-    """
+|Metric|Rating|
+|:-|:-|
+|Bias Rating|{obj['bias']}|
+|Factual Rating| {obj['factual']}|
+"""
     credibility = obj.get("credibility", "no credibility rating available")
     if credibility != "no credibility rating available":
         text += f"|Credibility Rating|{obj['credibility']}|\n"
@@ -145,28 +141,28 @@ def add_prefix_to_paragraphs(input_string):
 
 def get_reply_text(domain, url, comment=None):
     archive_links = f"""
-    🔗 **Archive**:
-    * [archive.today](https://archive.is/submit/?submitid=&url={url})
-    * [WayBack Machine](https://web.archive.org/web/{url})
-    * [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
-    """
+🔗 **Archive**:
+* [archive.today](https://archive.is/submit/?submitid=&url={url})
+* [WayBack Machine](https://web.archive.org/web/{url})
+* [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
+"""
     formatted_string = add_prefix_to_paragraphs(
         comment.body) if comment else ""
 
     submission_statement = f"""
     📣 **[Submission Statement from OP]({comment.permalink})**:
-    > {formatted_string}
-    """ if comment else ""
+> {formatted_string}
+""" if comment else ""
 
     base_text = f"""
-    ---
-    **Post Approved**: Your submission has been approved!
-    {archive_links}
-    {submission_statement}
-    ---
+---
+**Post Approved**: Your submission has been approved!
+{archive_links}
+{submission_statement}
+---
 
-    📜 **Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
-    """
+📜 **Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
+"""
 
     if domain:
         additional_text = mbfc_political_bias(domain)
@@ -255,29 +251,34 @@ def monitor_comments():
         try:
             print('monitor_comments:')
             for comment in subreddit.stream.comments():
-                if (comment != None):
-                    print("comment: ", comment)
-                    if comment.author == "empleadoEstatalBot":
-                        comment.mod.approve()
-                    if comment.is_submitter and comment.parent_id == (
-                        't3_' + comment.submission.id
-                    ) and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
-                    ):
-                        if has_submission_statement(comment):
-                            print('Submission ', comment.submission,
-                                  'approved. SS Comment : ', comment)
-                            approve_submission(comment.submission, comment)
-                    if comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini):
-                        comment.save()
-                        json_output = gemini_detection(comment.body)
-                        parsed_data = json.loads(json_output)
-                        if parsed_data['answer'] == 'yes':
-                            mod_mail.create(
-                                subject="Rule breaking comment detected",
-                                body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                    comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_data['reason']}""",
-                                recipient=os.environ.get('SUBREDDIT'))
+                try:
 
+                    if (comment != None):
+                        print("comment: ", comment)
+                        if comment.author == "empleadoEstatalBot":
+                            comment.mod.approve()
+                        if comment.is_submitter and comment.parent_id == (
+                            't3_' + comment.submission.id
+                        ) and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
+                        ):
+                            if has_submission_statement(comment):
+                                print('Submission ', comment.submission,
+                                      'approved. SS Comment : ', comment)
+                                approve_submission(comment.submission, comment)
+                        if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini):
+
+                            gemini_result = gemini_detection(comment.body)
+                            parsed_result = json.loads(gemini_result)
+                            if parsed_result['answer'] == 'yes':
+                                mod_mail.create(
+                                    subject="Rule breaking comment detected",
+                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                    recipient=os.environ.get('SUBREDDIT'))
+                            comment.save()
+                except Exception as e:
+                    PrintException()
+                    time.sleep(60)
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
             time.sleep(60)
