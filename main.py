@@ -270,12 +270,21 @@ def monitor_comments():
                             gemini_result = gemini_detection(comment.body)
                             parsed_result = json.loads(gemini_result)
                             if parsed_result['answer'] == 'yes':
-                                mod_mail.create(
-                                    subject="Rule breaking comment detected",
-                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
-                                    recipient=os.environ.get('SUBREDDIT'))
+                                comment.mod.remove()
+                                comment.mod.lock()
+                                reply = comment.reply(
+                                    f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
+                                        parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia)* """
+                                )
+                                reply.mod.distinguish()
+                                reply.mod.lock()
+                                # mod_mail.create(
+                                #    subject="Rule breaking comment detected",
+                                #    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                #        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                #    recipient=os.environ.get('SUBREDDIT'))
                             comment.save()
+
                 except Exception as e:
                     PrintException()
                     time.sleep(60)
