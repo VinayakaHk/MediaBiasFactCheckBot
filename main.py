@@ -269,10 +269,10 @@ def monitor_comments():
                             gemini_result = gemini_detection(comment.body)
                             parsed_result = json.loads(gemini_result)
                             if parsed_result['answer'] == 'yes':
-                                comment.mod.remove()
+                                # comment.mod.remove()
                                 comment.mod.lock()
                                 reply = comment.reply(
-                                    f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
+                                    f"""Hi u/{comment.author}, Your comment has been locked by our AI based system for the following reason : \n\n {
                                         parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia)* """
                                 )
                                 reply.mod.distinguish()
