@@ -150,7 +150,7 @@ def get_reply_text(domain, url, comment=None):
         comment.body) if comment else ""
 
     submission_statement = f"""
-    📣 **[Submission Statement from OP]({comment.permalink})**:
+📣 **[Submission Statement from OP]({comment.permalink})**:
 > {formatted_string}
 """ if comment else ""
 
