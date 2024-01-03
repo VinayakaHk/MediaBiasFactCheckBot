@@ -265,7 +265,7 @@ def monitor_comments():
                                 print('Submission ', comment.submission,
                                       'approved. SS Comment : ', comment)
                                 approve_submission(comment.submission, comment)
-                        if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and len(comment.body) <= 1000:
+                        if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
                             gemini_result = gemini_detection(comment.body)
                             parsed_result = json.loads(gemini_result)
                             if parsed_result['answer'] == 'yes':
