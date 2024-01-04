@@ -130,7 +130,7 @@ def send_to_modqueue(submission):
 def add_prefix_to_paragraphs(input_string):
     # Use regular expression to match multiple consecutive newline characters
     # and replace them with just two newline characters
-    formatted_string = re.sub(r'\n+', '\n>\n', input_string)
+    formatted_string = re.sub(r'\n+', '\n>\n>', input_string)
 
     # Add "> " to the start of each paragraph
     formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
