@@ -15,9 +15,10 @@ import praw
 from src.gemini import gemini_detection
 load_dotenv()
 
-whitelisted_authors_from_Gemini = [
-    'AutoModerator', 'GeoIndModBot', 'empleadoEstatalBot', 'GeopoliticsIndia-ModTeam', 'AmputatorBot'
-]
+
+whitelisted_authors_from_Gemini = list(
+    os.environ.get("WHITELIST_GEMINI").split(" "))
+
 # Initialize PRAW with your credentials
 reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
                      client_secret=os.environ.get("CLIENT_SECRET"),
@@ -115,7 +116,8 @@ def send_to_modqueue(submission):
     try:
         submission.mod.remove()
         message = submission.mod.send_removal_message(
-            message='Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 2-3 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/geopoliticsIndia/wiki/submissionstatement/ .'
+            message=f"""Your submission has been filtered until you enter a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 2-3 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{
+                os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
         )
         message.mod.lock()
         return message
@@ -169,8 +171,8 @@ def get_reply_text(domain, url, comment=None):
         if additional_text:
             base_text += "\n\n" + additional_text
 
-    footer = """\n
-❓ Questions or concerns? [Contact our moderators](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia).
+    footer = f"""\n
+❓ Questions or concerns? [Contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')}).
 """
 
     return base_text + footer
@@ -273,7 +275,7 @@ def monitor_comments():
                                 comment.mod.lock()
                                 reply = comment.reply(
                                     f"""Hi u/{comment.author}, Your comment has been locked by our AI based system for the following reason : \n\n {
-                                        parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/GeopoliticsIndia)* """
+                                        parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
                                 )
                                 reply.mod.distinguish()
                                 reply.mod.lock()
