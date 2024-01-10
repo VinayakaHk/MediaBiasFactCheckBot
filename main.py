@@ -46,7 +46,7 @@ def PrintException():
 
 
 def print_mbfc_text(domain, obj):
-    text = f"""\n\n**📰 Media Bias fact Check Rating :**  \n\n\n\n
+    text = f"""\n\n**📰 Media Bias fact Check Rating :**  {obj['name']} \n\n\n\n
 |Metric|Rating|
 |:-|:-|
 |Bias Rating|{obj['bias']}|
@@ -57,7 +57,8 @@ def print_mbfc_text(domain, obj):
         text += f"|Credibility Rating|{obj['credibility']}|\n"
 
     text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {
-        obj['name']}'s review [here]({obj['profile']})."""
+        obj['name']}'s review [here]({obj['profile']}).
+***"""
     return text
 
 
@@ -141,13 +142,19 @@ def add_prefix_to_paragraphs(input_string):
     return formatted_string
 
 
-def get_reply_text(domain, url, comment=None):
+def get_reply_text(domains, urls, comment=None):
     archive_links = f"""
 🔗 **Archive**:
-* [archive.today](https://archive.is/submit/?submitid=&url={url})
-* [WayBack Machine](https://web.archive.org/web/{url})
-* [Google Webcache](http://webcache.googleusercontent.com/search?q=cache:{url})
+
+---
 """
+
+    for index, url in enumerate(urls):
+        archive_links += f"""* [archive.today - {domains[index]}
+            ](https://archive.is/submit/?submitid=&url={url}) | """
+        archive_links += f"""[Google Webcache - {
+            domains[index]}](http://webcache.googleusercontent.com/search?q=cache:{url})\n"""
+
     formatted_string = add_prefix_to_paragraphs(
         comment.body) if comment else ""
 
@@ -161,40 +168,66 @@ def get_reply_text(domain, url, comment=None):
 **Post Approved**: Your submission has been approved!
 {archive_links}
 {submission_statement}
----
-
-📜 **Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
+***
+📜 Community Reminder: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
+***
 """
 
-    if domain:
-        additional_text = mbfc_political_bias(domain)
-        if additional_text:
-            base_text += "\n\n" + additional_text
+    for domain in domains:
+        if domain:
+            additional_text = mbfc_political_bias(domain)
+            if additional_text:
+                base_text += "\n\n" + additional_text
 
-    footer = f"""\n
+    footer = f"""
 ❓ Questions or concerns? [Contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')}).
 """
 
     return base_text + footer
 
 
-def edit_geoind_comment(submission, comment):
+def edit_geoind_comment(submission, comment, is_self):
     try:
         submission.comments.replace_more(limit=None)
         print("comment from edit_geoind_comment : ", comment)
         # Delete previous comments made by the bot
         for top_level_comment in submission.comments:
+            console.log('top_level_comment: ', top_level_comment)
             if (top_level_comment.author == reddit.user.me()):
                 top_level_comment.delete()
+        if (is_self == False):
+            url = str(submission.url)
+            domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
+            domain = [domain]
+            url = [url]
+            reply_text = get_reply_text(domain, url, comment)
+            reply = submission.reply(reply_text)
+            reply.mod.distinguish(sticky=True)
+            reply.mod.lock()
+        else:
+            full_text = submission.selftext
+            # Define a regular expression pattern to match URLs
+            url_pattern = re.compile(r'(https?://[^\s]+)')
+            domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
+            urls = url_pattern.findall(full_text)
+            # Find all matches in the text
+            domains = domain_pattern.findall(full_text)
+            if (domains == []):
+                url = str(submission.url)
+                domain = re.search(
+                    'https?://([A-Za-z_0-9.-]+).*', url).group(1)
+                domain = [domain]
+                url = [url]
+                reply_text = get_reply_text(domain, url, comment)
+                reply = submission.reply(reply_text)
+                reply.mod.distinguish(sticky=True)
+                reply.mod.lock()
+            else:
+                reply_text = get_reply_text(domains, urls, comment)
 
-        url = str(submission.url)
-        domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
-
-        reply_text = get_reply_text(domain, url, comment)
-        reply = submission.reply(reply_text)
-        reply.mod.distinguish(sticky=True)
-        reply.mod.lock()
-
+                reply = submission.reply(reply_text)
+                reply.mod.distinguish(sticky=True)
+                reply.mod.lock()
     except praw.exceptions.RedditAPIException as e:
         print(f"API Exception: {e}")
         time.sleep(60)
@@ -206,10 +239,10 @@ def edit_geoind_comment(submission, comment):
 # Function to approve a submission if it has a submission statement in its comments
 
 
-def approve_submission(submission, comment=None):
+def approve_submission(submission, comment=None, is_self=True):
     try:
         submission.mod.approve()
-        edit_geoind_comment(submission, comment)
+        edit_geoind_comment(submission, comment, is_self)
     except praw.exceptions.RedditAPIException as e:
         print(f"API Exception: {e}")
         time.sleep(60)
@@ -234,7 +267,7 @@ def monitor_submission():
                         message = send_to_modqueue(submission)
                     else:
                         if len(submission.selftext) > 200:
-                            approve_submission(submission)
+                            approve_submission(submission, None, True)
 
                         else:
                             print("Self Text filtered : ", submission)
@@ -266,7 +299,8 @@ def monitor_comments():
                             if has_submission_statement(comment):
                                 print('Submission ', comment.submission,
                                       'approved. SS Comment : ', comment)
-                                approve_submission(comment.submission, comment)
+                                approve_submission(
+                                    comment.submission,  comment, False)
                         # if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
                             # gemini_result = gemini_detection(comment.body)
                             # parsed_result = json.loads(gemini_result)
