@@ -301,24 +301,49 @@ def monitor_comments():
                                       'approved. SS Comment : ', comment)
                                 approve_submission(
                                     comment.submission,  comment, False)
-                        # if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
-                            # gemini_result = gemini_detection(comment.body)
-                            # parsed_result = json.loads(gemini_result)
-                            # if parsed_result['answer'] == 'yes':
+                        if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
+                            gemini_result = gemini_detection(comment.body)
+                            parsed_result = json.loads(gemini_result)
+                            if int(parsed_result['answer']) >= 70:
                                 # comment.mod.remove()
                                 # comment.mod.lock()
                                 # reply = comment.reply(
-                                #    f"""Hi u/{comment.author}, Your comment has been locked by our AI based system for the following reason : \n\n {
-                                #        parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+                                #     f"""Hi u/{comment.author}, Your comment has been locked by our AI based system for the following reason : \n\n {
+                                #         parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
                                 # )
                                 # reply.mod.distinguish()
                                 # reply.mod.lock()
-                                # mod_mail.create(
-                                #    subject="Rule breaking comment detected",
-                                #    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                #        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
-                                #    recipient=os.environ.get('SUBREDDIT'))
-                            # comment.save()
+                                mod_mail.create(
+                                    subject=f"Rule breaking comment - {
+                                        parsed_result['answer']}%",
+                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                    recipient=os.environ.get('MODERATOR1'))
+                                mod_mail.create(
+                                    subject=f"Rule breaking comment - {
+                                        parsed_result['answer']}%",
+                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                    recipient=os.environ.get('MODERATOR2'))
+                                mod_mail.create(
+                                    subject=f"Rule breaking comment - {
+                                        parsed_result['answer']}%",
+                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                    recipient=os.environ.get('MODERATOR3'))
+                                mod_mail.create(
+                                    subject=f"Rule breaking comment - {
+                                        parsed_result['answer']}%",
+                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                    recipient=os.environ.get('MODERATOR4'))
+                                mod_mail.create(
+                                    subject=f"Rule breaking comment - {
+                                        parsed_result['answer']}%",
+                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
+                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                    recipient=os.environ.get('MODERATOR5'))
+                            comment.save()
 
                 except Exception as e:
                     PrintException()
