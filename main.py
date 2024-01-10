@@ -304,7 +304,7 @@ def monitor_comments():
                         if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
                             gemini_result = gemini_detection(comment.body)
                             parsed_result = json.loads(gemini_result)
-                            if int(parsed_result['answer']) >= 70:
+                            if int(parsed_result['answer']) >= 50:
                                 # comment.mod.remove()
                                 # comment.mod.lock()
                                 # reply = comment.reply(
