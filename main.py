@@ -192,7 +192,6 @@ def edit_geoind_comment(submission, comment, is_self):
         print("comment from edit_geoind_comment : ", comment)
         # Delete previous comments made by the bot
         for top_level_comment in submission.comments:
-            console.log('top_level_comment: ', top_level_comment)
             if (top_level_comment.author == reddit.user.me()):
                 top_level_comment.delete()
         if (is_self == False):
