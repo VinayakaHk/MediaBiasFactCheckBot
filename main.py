@@ -319,30 +319,7 @@ def monitor_comments():
                                     body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
                                         comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
                                     recipient=os.environ.get('MODERATOR1'))
-                                mod_mail.create(
-                                    subject=f"""Rule breaking comment - {
-                                        parsed_result['answer']}%""",
-                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
-                                    recipient=os.environ.get('MODERATOR2'))
-                                mod_mail.create(
-                                    subject=f"""Rule breaking comment - {
-                                        parsed_result['answer']}%""",
-                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
-                                    recipient=os.environ.get('MODERATOR3'))
-                                mod_mail.create(
-                                    subject=f"""Rule breaking comment - {
-                                        parsed_result['answer']}%""",
-                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
-                                    recipient=os.environ.get('MODERATOR4'))
-                                mod_mail.create(
-                                    subject=f"""Rule breaking comment - {
-                                        parsed_result['answer']}%""",
-                                    body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
-                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
-                                    recipient=os.environ.get('MODERATOR5'))
+
                             comment.save()
 
                 except Exception as e:
