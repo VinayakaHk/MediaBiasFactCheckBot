@@ -319,7 +319,7 @@ def monitor_comments():
                                             parsed_result['answer']}%""",
                                         body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: {comment.author}\n\ncomment: {
                                             comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
-                                        recipient=f"u/{os.environ.get("MODERATOR1")}"
+                                        recipient=f"""u/{os.environ.get("MODERATOR1")}""")
                                     comment.save()
 
                             except Exception as e:
