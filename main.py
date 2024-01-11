@@ -304,15 +304,15 @@ def monitor_comments():
                             try:
                                 gemini_result = gemini_detection(comment.body)
                                 parsed_result = json.loads(gemini_result)
-                                if int(parsed_result['answer']) >= 50:
+                                if int(parsed_result['answer']) > 90:
                                     # comment.mod.remove()
                                     # comment.mod.lock()
-                                    # reply = comment.reply(
-                                    #     f"""Hi u/{comment.author}, Your comment has been locked by our AI based system for the following reason : \n\n {
-                                    #         parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
-                                    # )
-                                    # reply.mod.distinguish()
-                                    # reply.mod.lock()
+                                    reply = comment.reply(
+                                        f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
+                                            parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+                                    )
+                                    reply.mod.distinguish()
+                                    reply.mod.lock()
                                     mod_mail.create(
                                         subject=f"""Rule breaking comment - {
                                             parsed_result['answer']}%""",
