@@ -52,7 +52,7 @@ def gemini_detection(input_string):
                 e}. Retrying in 2 seconds...\033""", e)
             time.sleep(2)
         if (response.prompt_feedback.block_reason):
-            return ('{"answer": "100", "reason": "Rule 1 : Breaks Reddit content policy"}')
+            return ('{"answer": "100", "reason": "Rule 2 : The comment is extremely toxic. Breaks Rule 1 : Follow Reddits content policy and Rule 2: Abuse , trolling or personal attacks."}')
         if (response.text):
             return (response.text)
         else:
