@@ -131,14 +131,8 @@ def send_to_modqueue(submission):
 
 
 def add_prefix_to_paragraphs(input_string):
-    # Use regular expression to match multiple consecutive newline characters
-    # and replace them with just two newline characters
     formatted_string = re.sub(r'\n+', '\n>\n>', input_string)
-
-    # Add "> " to the start of each paragraph
     formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
-    # formatted_string = re.sub(r'(?<=\n)(?=[^\n])', "> ", formatted_string)
-
     return formatted_string
 
 
@@ -186,8 +180,10 @@ def get_reply_text(domains, urls, comment=None):
     return base_text + footer
 
 
-def edit_geoind_comment(submission, comment, is_self):
+# Function to approve a submission if it has a submission statement in its comments
+def approve_submission(submission, comment=None, is_self=True):
     try:
+        submission.mod.approve()
         submission.comments.replace_more(limit=None)
         print("comment from edit_geoind_comment : ", comment)
         # Delete previous comments made by the bot
@@ -205,11 +201,9 @@ def edit_geoind_comment(submission, comment, is_self):
             reply.mod.lock()
         else:
             full_text = submission.selftext
-            # Define a regular expression pattern to match URLs
             url_pattern = re.compile(r'(https?://[^\s]+)')
             domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
             urls = url_pattern.findall(full_text)
-            # Find all matches in the text
             domains = domain_pattern.findall(full_text)
             if (domains == []):
                 url = str(submission.url)
@@ -227,21 +221,6 @@ def edit_geoind_comment(submission, comment, is_self):
                 reply = submission.reply(reply_text)
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
-    except praw.exceptions.RedditAPIException as e:
-        print(f"API Exception: {e}")
-        time.sleep(60)
-    except Exception as e:
-        PrintException()
-        time.sleep(60)
-
-
-# Function to approve a submission if it has a submission statement in its comments
-
-
-def approve_submission(submission, comment=None, is_self=True):
-    try:
-        submission.mod.approve()
-        edit_geoind_comment(submission, comment, is_self)
     except praw.exceptions.RedditAPIException as e:
         print(f"API Exception: {e}")
         time.sleep(60)
@@ -307,12 +286,12 @@ def monitor_comments():
                                 if int(parsed_result['answer']) > 90:
                                     # comment.mod.remove()
                                     # comment.mod.lock()
-                                    reply = comment.reply(
-                                        f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
-                                            parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
-                                    )
-                                    reply.mod.distinguish()
-                                    reply.mod.lock()
+                                    # reply = comment.reply(
+                                    #     f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
+                                    #         parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+                                    # )
+                                    # reply.mod.distinguish()
+                                    # reply.mod.lock()
                                     mod_mail.create(
                                         subject=f"""Rule breaking comment - {
                                             parsed_result['answer']}%""",
