@@ -263,11 +263,12 @@ def monitor_comments():
     while True:
         try:
             print('monitor_comments:')
-            for comment in subreddit.stream.comments():
+            for comment in subreddit.stream.comments(skip_existing=True):
                 try:
 
                     if (comment != None):
-                        print("comment: ", comment)
+                        print("comment: ", comment,
+                              "author : ", comment.author)
                         if comment.author == "empleadoEstatalBot":
                             comment.mod.approve()
                         if comment.is_submitter and comment.parent_id == (
@@ -279,26 +280,25 @@ def monitor_comments():
                                       'approved. SS Comment : ', comment)
                                 approve_submission(
                                     comment.submission,  comment, False)
-                        if comment.removed == False and comment.approved == False and comment.saved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
+                        if comment.removed == False and comment.approved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
                             try:
                                 gemini_result = gemini_detection(comment.body)
-                                parsed_result = json.loads(gemini_result)
-                                if int(parsed_result['answer']) > 90:
+                                if int(gemini_result['answer']) > 90:
                                     # comment.mod.remove()
                                     # comment.mod.lock()
                                     # reply = comment.reply(
                                     #     f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
-                                    #         parsed_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+                                    #         gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
                                     # )
                                     # reply.mod.distinguish()
                                     # reply.mod.lock()
                                     mod_mail.create(
                                         subject=f"""Rule breaking comment - {
-                                            parsed_result['answer']}%""",
+                                            gemini_result['answer']}%""",
                                         body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
                                             comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
                                         recipient=f"""u/{os.environ.get("MODERATOR1")}""")
-                                    comment.save()
+                                    # comment.save()
 
                             except Exception as e:
                                 print('Error', e)
@@ -317,11 +317,11 @@ def monitor_comments():
 def main():
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
-            future_submission = executor.submit(monitor_submission)
+            # future_submission = executor.submit(monitor_submission)
             future_comments = executor.submit(monitor_comments)
-        if future_submission.exception():
-            print(f"""Error in monitor_submission{
-                  future_submission.exception()}""")
+        # if future_submission.exception():
+         #   print(f"""Error in monitor_submission{
+          #        future_submission.exception()}""")
         if future_comments.exception():
             print(f"""Error in monitor_comments: {
                   future_comments.exception()}""")
@@ -330,10 +330,10 @@ def main():
         exit()
     except:
         print("Error ")
-        process_submission.terminate()
+     #   process_submission.terminate()
         process_comments.terminate()
         time.sleep(60)
-        process_submission.start()
+      #  process_submission.start()
         process_comments.start()
 
 
