@@ -296,7 +296,7 @@ def monitor_comments():
                                         subject=f"""Rule breaking comment - {
                                             gemini_result['answer']}%""",
                                         body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
-                                            comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
+                                            comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {gemini_result['reason']}""",
                                         recipient=f"""u/{os.environ.get("MODERATOR1")}""")
                                     comment.save()
 
