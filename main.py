@@ -263,7 +263,7 @@ def monitor_comments():
     while True:
         try:
             print('monitor_comments:')
-            for comment in subreddit.stream.comments(skip_existing=True):
+            for comment in subreddit.stream.comments():
                 try:
 
                     if (comment != None):
@@ -298,7 +298,7 @@ def monitor_comments():
                                         body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
                                             comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {parsed_result['reason']}""",
                                         recipient=f"""u/{os.environ.get("MODERATOR1")}""")
-                                    # comment.save()
+                                    comment.save()
 
                             except Exception as e:
                                 print('Error', e)
@@ -317,11 +317,11 @@ def monitor_comments():
 def main():
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
-            # future_submission = executor.submit(monitor_submission)
+            future_submission = executor.submit(monitor_submission)
             future_comments = executor.submit(monitor_comments)
-        # if future_submission.exception():
-         #   print(f"""Error in monitor_submission{
-          #        future_submission.exception()}""")
+        if future_submission.exception():
+            print(f"""Error in monitor_submission{
+                  future_submission.exception()}""")
         if future_comments.exception():
             print(f"""Error in monitor_comments: {
                   future_comments.exception()}""")
@@ -330,10 +330,10 @@ def main():
         exit()
     except:
         print("Error ")
-     #   process_submission.terminate()
+        process_submission.terminate()
         process_comments.terminate()
         time.sleep(60)
-      #  process_submission.start()
+        process_submission.start()
         process_comments.start()
 
 
