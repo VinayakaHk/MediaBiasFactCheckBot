@@ -21,7 +21,7 @@ def store_submission_in_mongo(mongo_db, submission):
 
     submissions_collection = mongo_db['submissions']
     submissions_collection.insert_one({
-        'author': str(submission.author.name),
+        'author': str(submission.author),
         'created': str(submission.created),
         'distinguished': str(submission.distinguished),
         'domain': str(submission.domain),
@@ -46,7 +46,7 @@ def store_submission_in_mongo(mongo_db, submission):
 def store_comment_in_mongo(mongo_db, comment):
     comments_collection = mongo_db['comments']
     comments_collection.insert_one({
-        'author': str(comment.author.name),
+        'author': str(comment.author),
         'author_is_blocked': str(comment.author_is_blocked),
         'banned_at_utc': str(comment.banned_at_utc),
         'banned_by': str(comment.banned_by),
