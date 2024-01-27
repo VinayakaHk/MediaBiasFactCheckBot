@@ -11,10 +11,11 @@ import re
 import os
 import praw
 # import pprint
-# from src.mongodb import client
+from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo
 from src.gemini import gemini_detection
 load_dotenv()
 
+mongo_client = connect_to_mongo()
 
 whitelisted_authors_from_Gemini = list(
     os.environ.get("WHITELIST_GEMINI").split(" "))
@@ -139,7 +140,6 @@ def add_prefix_to_paragraphs(input_string):
 def get_reply_text(domains, urls, comment=None):
     archive_links = f"""
 🔗 **Archive**:
-
 ---
 """
 
@@ -235,7 +235,7 @@ def monitor_submission():
             print('monitor_submission:')
 
             for submission in subreddit.stream.submissions():
-                # pprint.pprint(submission.__dict__)
+                store_submission_in_mongo(mongo_client, submission)
                 print("Submission : ", submission, "Approved : ", submission.approved,
                       submission.removed_by)
                 if submission != None and submission.approved == False and submission.removed == False:
@@ -265,10 +265,11 @@ def monitor_comments():
             print('monitor_comments:')
             for comment in subreddit.stream.comments():
                 try:
-
                     if (comment != None):
+                        store_comment_in_mongo(mongo_client, comment)
                         print("comment: ", comment,
                               "author : ", comment.author)
+
                         if comment.author == "empleadoEstatalBot":
                             comment.mod.approve()
                         if comment.is_submitter and comment.parent_id == (
@@ -280,7 +281,7 @@ def monitor_comments():
                                       'approved. SS Comment : ', comment)
                                 approve_submission(
                                     comment.submission,  comment, False)
-                        if comment.removed == False and comment.approved == False and comment.spam == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
+                        if comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
                             try:
                                 gemini_result = gemini_detection(comment.body)
                                 if int(gemini_result['answer']) > 90:

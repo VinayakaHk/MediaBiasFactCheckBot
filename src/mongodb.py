@@ -16,81 +16,61 @@ load_dotenv()
 MAX_RETRIES = 10
 RETRY_DELAY = 10
 
-print(certifi.where())
-
 
 def store_submission_in_mongo(mongo_db, submission):
-    if submission.removed or submission.author is None:
-        # Skip 'removed' submissions or submissions without an author
-        return
 
     submissions_collection = mongo_db['submissions']
     submissions_collection.insert_one({
-        'approved': submission.approved,
-        'approved_at_utc': submission.approved_at_utc,
-        'approved_by': submission.approved_by,
-        'archived': submission.archived,
-        '_author': submission.author,
-        'created': submission.created,
-        'distinguished': submission.distinguished,
-        'downs': submission.downs,
-        'domain': submission.domain,
-        'id': submission.id,
-        'is_reddit_media_domain': submission.is_reddit_media_domain,
-        'is_self': submission.is_self,
-        'is_video': submission.is_video,
-        'locked': submission.locked,
-        'mod_note': submission.mod_note,
-        'mod_reason_by': submission.mod_reason_by,
-        'mod_reason_title': submission.mod_reason_title,
-        'mod_reports': submission.mod_reports,
-        'name': submission.name,
-        'num_comments': submission.num_comments,
-        'num_reports': submission.num_reports,
-        'over_18': submission.over_18,
-        'permalink': submission.permalink,
-        'pinned': submission.pinned,
-        'post_hint': submission.post_hint,
-        'removal_reason': submission.removal_reason,
-        'removed': submission.removed,
-        'removed_by': submission.removed_by,
-        'removed_by_category': submission.removed_by_category,
-        'report_reasons': submission.report_reasons,
-        'selftext': submission.selftext,
-        'send_replies': submission.send_replies,
-        'spam': submission.spam,
-        'spoiler': submission.spoiler,
-        'stickied': submission.stickied,
-        'subreddit': submission.subreddit,
-        'subreddit_id': submission.subreddit_id,
-        'subreddit_name_prefixed': submission.subreddit_name_prefixed,
-        'subreddit_subscribers': submission.subreddit_subscribers,
-        'title': submission.title,
-        'upvote_ratio': submission.upvote_ratio,
-        'ups': submission.ups,
-        'url': submission.url,
-        'url_overridden_by_dest': submission.url_overridden_by_dest,
-        'user_reports': submission.user_reports,
-        'author': submission.author.name,
+        'author': str(submission.author.name),
+        'created': str(submission.created),
+        'distinguished': str(submission.distinguished),
+        'domain': str(submission.domain),
+        'submission_id': str(submission.id),
+        'is_reddit_media_domain': str(submission.is_reddit_media_domain),
+        'is_self': str(submission.is_self),
+        'is_video': str(submission.is_video),
+        'locked': str(submission.locked),
+        'name': str(submission.name),
+        'permalink': str(submission.permalink),
+        'selftext': str(submission.selftext),
+        'spoiler': str(submission.spoiler),
+        'stickied': str(submission.stickied),
+        'subreddit': str(submission.subreddit),
+        'subreddit_id': str(submission.subreddit_id),
+        'subreddit_name_prefixed': str(submission.subreddit_name_prefixed),
+        'subreddit_subscribers': str(submission.subreddit_subscribers),
+        'title': str(submission.title),
+        'url': str(submission.url),
+        'url_overridden_by_dest': str(submission.url_overridden_by_dest),
     })
 
 
 def store_comment_in_mongo(mongo_db, comment):
-    if comment.removed or comment.author is None:
-        # Skip 'removed' comments or comments without an author
-        return
-
     comments_collection = mongo_db['comments']
     comments_collection.insert_one({
-        'comment_id': comment.id,
-        'body': comment.body,
-        'author': comment.author.name,
-        'score': comment.score,
-        'created_utc': comment.created_utc,
-        'permalink': comment.permalink,
-        'link_id': comment.link_id,
-        'parent_id': comment.parent_id,
-        'is_submitter': comment.is_submitter,
+        'author': str(comment.author.name),
+        'author_is_blocked': str(comment.author_is_blocked),
+        'banned_at_utc': str(comment.banned_at_utc),
+        'banned_by': str(comment.banned_by),
+        'body': str(comment.body),
+        'controversiality': str(comment.controversiality),
+        'created_utc': str(comment.created_utc),
+        'distinguished': str(comment.distinguished),
+        'comment_id': str(comment.id),
+        'is_submitter': str(comment.is_submitter),
+        'link_author': str(comment.link_author),
+        'link_id': str(comment.link_id),
+        'link_permalink': str(comment.link_permalink),
+        'link_title': str(comment.link_title),
+        'link_url': str(comment.link_url),
+        'name': str(comment.name),
+        'num_comments': str(comment.num_comments),
+        'parent_id': str(comment.parent_id),
+        'permalink': str(comment.permalink),
+        'stickied': str(comment.stickied),
+        'subreddit': str(comment.subreddit),
+        'subreddit_id': str(comment.subreddit_id),
+        'subreddit_name_prefixed': str(comment.subreddit_name_prefixed),
     })
 
 
@@ -100,6 +80,7 @@ def connect_to_mongo():
         try:
             # Create a new client and connect to the server
             client = MongoClient(os.environ.get("MONGODB"))
+            db = client.reddit
             # Send a ping to confirm a successful connection
             try:
                 client.admin.command('ping')
@@ -107,7 +88,7 @@ def connect_to_mongo():
             except Exception as e:
                 print(e)
 
-            return client
+            return db
         except Exception as e:
             print(e)
             print(
@@ -116,6 +97,3 @@ def connect_to_mongo():
             time.sleep(RETRY_DELAY)
     print("Failed to connect to MongoDB after multiple attempts.")
     exit()
-
-
-client = connect_to_mongo()
