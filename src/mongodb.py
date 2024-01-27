@@ -30,7 +30,6 @@ def store_submission_in_mongo(mongo_db, submission):
         'is_self': str(submission.is_self),
         'is_video': str(submission.is_video),
         'locked': str(submission.locked),
-        'name': str(submission.name),
         'permalink': str(submission.permalink),
         'selftext': str(submission.selftext),
         'spoiler': str(submission.spoiler),
