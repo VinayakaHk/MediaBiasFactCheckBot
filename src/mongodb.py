@@ -41,7 +41,6 @@ def store_submission_in_mongo(mongo_db, submission):
         'subreddit_subscribers': str(submission.subreddit_subscribers),
         'title': str(submission.title),
         'url': str(submission.url),
-        'url_overridden_by_dest': str(submission.url_overridden_by_dest),
     })
 
 
