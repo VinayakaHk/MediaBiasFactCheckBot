@@ -290,15 +290,15 @@ def monitor_comments():
                                 gemini_result = gemini_detection(
                                     comment.body, parent_comment, comment.link_title)
                                 if int(gemini_result['answer']) > 90:
-                                    comment.mod.remove()
-                                    removal_message = f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
-                                        gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+                                    # comment.mod.remove()
+                                    # removal_message = f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
+                                    #    gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
 
-                                    reply = comment.mod.send_removal_message(
-                                        message=removal_message, type='public_as_subreddit')
+                                    # reply = comment.mod.send_removal_message(
+                                    #    message=removal_message, type='public_as_subreddit')
 
-                                    reply.mod.distinguish()
-                                    reply.mod.lock()
+                                    # reply.mod.distinguish()
+                                    # reply.mod.lock()
                                     mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
                                         comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {gemini_result['reason']}"""
                                     mod_mail.create(
