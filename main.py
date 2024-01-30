@@ -234,7 +234,7 @@ def monitor_submission():
         try:
             print('monitor_submission:')
 
-            for submission in subreddit.stream.submissions(skip_existing=True):
+            for submission in subreddit.stream.submissions():
                 if (submission != None):
                     print("Submission : ", submission, "Approved : ", submission.approved,
                           submission.removed_by)
@@ -265,7 +265,7 @@ def monitor_comments():
     while True:
         try:
             print('monitor_comments:')
-            for comment in subreddit.stream.comments(skip_existing=True):
+            for comment in subreddit.stream.comments():
                 try:
                     if (comment != None):
                         print("comment: ", comment,
