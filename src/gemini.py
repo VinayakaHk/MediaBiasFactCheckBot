@@ -61,13 +61,32 @@ def convert_quotes(obj):
     return obj
 
 
-def gemini_detection(input_string):
+def gemini_detection(input_string, parent_comment, link_title):
+    print("link_title", link_title)
+    print("parent_comment", parent_comment)
+    if (parent_comment == None):
+        parent_comment = link_title
+    print("input_string", input_string)
     try:
         retry = True
         while retry:
             prompt_parts = [
-                """You are a moderator for the subreddit community %s where the rules are as follows, \n\nRule 1 : Follow Reddit Content Policy - Comply to reddit site-wide rules. Do not call for the Harm/death of an individual and/or a group online or offline. Do not involve in hate-mongering or dog-whistling, spreading fake news or pejorative use of slurs.\nRule 2 : Abuse, Trolling and Personal Attacks - No unwelcome content or hostility like Spamming/Trolling/Abuse/Personal Attacks which negatively affects the subreddit atmosphere.\n\nNow based on this information , tell me in a json format if this comment Starting and ending with \"\"\" violates any of the rules\n\n\"\"\"\"%s\"\"\"\n\nYour answer should range from  {"answer": "0" , "reason" : "<your reply>" }  or {"answer": "99", "reason" : "<your reply>"}\n where 1-99 is the probability where  1 percent , doesn't violate the rules and 99 percent the answer violates the rules .  make sure <your reply> is detailed and sophisticated. donot write anything beyond answer and reason."""
-                % (os.environ.get('SUBREDDIT'), input_string),
+                """You are a moderator for the subreddit community %s where the rules are as follows, \n\n
+Rule 1 : Follow Reddit Content Policy - 
+
+Do not call for the Harm/death of an individual and/or a group online or offline. 
+Do not involve in hate-mongering or dog-whistling and pejorative use of slurs.\n
+
+Rule 2 : Abuse, Trolling and Personal Attacks - 
+No unwelcome content or hostility like Spamming/Trolling/Abuse/Personal Attacks which negatively affects the subreddit atmosphere.\n\n
+
+For context, %s is the title of the article and %s is the parent comment that OP is replying to. Do not judge these comments as these are just for context. 
+
+Now based on this information , tell me in a json format 
+if this comment Starting and ending with \"\"\" violates any of the rules \n\n\"\"\"\"%s\"\"\"\n\n
+Your answer should range from  {"answer": "0" , "reason" : "<your reply>" }  or {"answer": "99", "reason" : "<your reply>"}\n where 1-99 is the probability where  1 percent , doesn't violate the rules and 99 percent the answer violates the rules.
+make sure <your reply> is detailed and sophisticated. do not write anything beyond answer and reason."""
+                % (os.environ.get('SUBREDDIT'), link_title, parent_comment, input_string),
             ]
             try:
                 response = model.generate_content(prompt_parts)
@@ -92,22 +111,18 @@ def gemini_detection(input_string):
                     json_str = json_match.group(0)
                     json_str = json_str.replace('\\"', '"')
                     json_str = json_str.replace("\\'", "'")
-                    print('json_str: ', json_str)
                     answer_pattern = re.compile(
                         r'"answer"\s*:\s*["\']?(\d+)["\']?')
                     answer_match = answer_pattern.search(json_str)
                     json_str2 = ""
                     if (answer_match):
                         answer = answer_match.group(1)
-                        print('answer: ', answer)
                         json_str2 = '{"answer":"' + answer + '"'
-                        print('json_str2: ', json_str2)
                     reason_pattern = re.compile(
                         r'"reason"\s*:\s*["\']?(.*?)"\}')
                     reason_match = reason_pattern.search(json_str)
                     if (reason_match):
                         reason = reason_match.group(1)
-                        print('reason : ', reason)
                         reason = re.sub(r'"|\\\\"', '\'', reason)
                         json_str2 = json_str2 + ', "reason":"' + reason + '"}'
                         json_obj = json.loads(json_str2)

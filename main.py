@@ -11,11 +11,11 @@ import re
 import os
 import praw
 # import pprint
-from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo
+from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo, comment_body
 from src.gemini import gemini_detection
 load_dotenv()
 
-mongo_client = connect_to_mongo()
+connect_to_mongo()
 
 whitelisted_authors_from_Gemini = list(
     os.environ.get("WHITELIST_GEMINI").split(" "))
@@ -234,22 +234,24 @@ def monitor_submission():
         try:
             print('monitor_submission:')
 
-            for submission in subreddit.stream.submissions():
-                store_submission_in_mongo(mongo_client, submission)
-                print("Submission : ", submission, "Approved : ", submission.approved,
-                      submission.removed_by)
-                if submission != None and submission.approved == False and submission.removed == False:
-                    if not submission.is_self:
-                        print("Submission filtered : ", submission)
+            for submission in subreddit.stream.submissions(skip_existing=True):
+                if (submission != None):
+                    print("Submission : ", submission, "Approved : ", submission.approved,
+                          submission.removed_by)
+                    store_submission_in_mongo(submission)
 
-                        message = send_to_modqueue(submission)
-                    else:
-                        if len(submission.selftext) > 200:
-                            approve_submission(submission, None, True)
+                    if submission != None and submission.approved == False and submission.removed == False:
+                        if not submission.is_self:
+                            print("Submission filtered : ", submission)
 
-                        else:
-                            print("Self Text filtered : ", submission)
                             message = send_to_modqueue(submission)
+                        else:
+                            if len(submission.selftext) > 200:
+                                approve_submission(submission, None, True)
+
+                            else:
+                                print("Self Text filtered : ", submission)
+                                message = send_to_modqueue(submission)
                 time.sleep(0.5)
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
@@ -263,12 +265,12 @@ def monitor_comments():
     while True:
         try:
             print('monitor_comments:')
-            for comment in subreddit.stream.comments():
+            for comment in subreddit.stream.comments(skip_existing=True):
                 try:
                     if (comment != None):
-                        store_comment_in_mongo(mongo_client, comment)
                         print("comment: ", comment,
                               "author : ", comment.author)
+                        store_comment_in_mongo(comment)
 
                         if comment.author == "empleadoEstatalBot":
                             comment.mod.approve()
@@ -283,26 +285,30 @@ def monitor_comments():
                                     comment.submission,  comment, False)
                         if comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
                             try:
-                                gemini_result = gemini_detection(comment.body)
+                                parent_comment = comment_body(
+                                    comment.id)
+                                gemini_result = gemini_detection(
+                                    comment.body, parent_comment, comment.link_title)
                                 if int(gemini_result['answer']) > 90:
-                                    # comment.mod.remove()
-                                    # comment.mod.lock()
-                                    # reply = comment.reply(
-                                    #     f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
-                                    #         gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
-                                    # )
-                                    # reply.mod.distinguish()
-                                    # reply.mod.lock()
+                                    comment.mod.remove()
+                                    removal_message = f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
+                                        gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+
+                                    reply = comment.mod.send_removal_message(
+                                        message=removal_message, type='public_as_subreddit')
+
+                                    reply.mod.distinguish()
+                                    reply.mod.lock()
+                                    mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
+                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {gemini_result['reason']}"""
                                     mod_mail.create(
-                                        subject=f"""Rule breaking comment - {
+                                        subject=f"""Rule breaking comment by Gemini - {
                                             gemini_result['answer']}%""",
-                                        body=f"""Rule breaking comment detected by Gemini:\n\nAuthor: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
-                                            comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {gemini_result['reason']}""",
+                                        body=mod_mail_body,
                                         recipient=f"""u/{os.environ.get("MODERATOR1")}""")
                                     comment.save()
-
                             except Exception as e:
-                                print('Error', e)
+                                PrintException()
 
                 except Exception as e:
                     PrintException()
