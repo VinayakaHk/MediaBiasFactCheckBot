@@ -116,7 +116,6 @@ def store_comment_in_mongo(comment):
                 'link_title': str(comment.link_title),
                 'link_url': str(comment.link_url),
                 'name': str(comment.name),
-                'num_comments': str(comment.num_comments),
                 'parent_id': str(comment.parent_id),
                 'permalink': str(comment.permalink),
                 'stickied': str(comment.stickied),

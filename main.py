@@ -118,7 +118,10 @@ def send_to_modqueue(submission):
     try:
         submission.mod.remove()
         message = submission.mod.send_removal_message(
-            message=f"""Your submission has been filtered until you comment a Submission Statement. Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. Make sure its about 2-3 paragraphs long. \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{
+            message=f"""Your submission has been filtered until you comment a Submission Statement.
+Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement
+to get your post approved. Make sure its about 2-3 paragraphs long.
+\n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{
                 os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
         )
         message.mod.lock()
