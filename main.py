@@ -250,7 +250,7 @@ def gemini_comment(comment):
 
                 reply.mod.lock()
             mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
-                comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/context=3 \n\nBots reason for removal: {gemini_result['reason']}"""
+                comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {gemini_result['reason']}"""
             mod_mail.create(
                 subject=f"""Rule breaking comment by Gemini - {
                     gemini_result['answer']}%""",
