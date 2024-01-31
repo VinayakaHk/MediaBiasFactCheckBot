@@ -62,11 +62,8 @@ def convert_quotes(obj):
 
 
 def gemini_detection(input_string, parent_comment, link_title):
-    print("link_title", link_title)
-    print("parent_comment", parent_comment)
     if (parent_comment == None):
         parent_comment = link_title
-    print("input_string", input_string)
     try:
         retry = True
         while retry:
@@ -126,7 +123,6 @@ make sure <your reply> is detailed and sophisticated. do not write anything beyo
                         reason = re.sub(r'"|\\\\"', '\'', reason)
                         json_str2 = json_str2 + ', "reason":"' + reason + '"}'
                         json_obj = json.loads(json_str2)
-                        print('json_obj: ', json_obj)
                     return json_obj
                 else:
                     return ({"answer": "0", "reason": "API ERROR"})
@@ -136,3 +132,4 @@ make sure <your reply> is detailed and sophisticated. do not write anything beyo
                 return ({"answer": "0", "reason": "API ERROR"})
     except Exception as e:
         PrintException()
+        time.sleep(60)

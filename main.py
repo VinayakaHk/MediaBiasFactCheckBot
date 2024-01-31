@@ -79,6 +79,7 @@ def mbfc_political_bias(domain_url):
 
     except Exception as e:
         PrintException()
+        time.sleep(60)
 
 
 # Function to check if a submission contains a submission statement in its comments
@@ -232,6 +233,35 @@ def approve_submission(submission, comment=None, is_self=True):
         time.sleep(60)
 
 
+def gemini_comment(comment):
+    try:
+        global mod_mail
+        parent_comment = comment_body(comment.id)
+        gemini_result = gemini_detection(
+            comment.body, parent_comment, comment.link_title)
+        if int(gemini_result['answer']) > 90:
+            if (comment.parent_id == comment.link_id):
+                comment.mod.remove()
+                removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
+                    gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+
+                reply = comment.mod.send_removal_message(
+                    message=removal_message, type='public_as_subreddit')
+
+                reply.mod.lock()
+            mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
+                comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/context=3 \n\nBots reason for removal: {gemini_result['reason']}"""
+            mod_mail.create(
+                subject=f"""Rule breaking comment by Gemini - {
+                    gemini_result['answer']}%""",
+                body=mod_mail_body,
+                recipient=f"""u/{os.environ.get("MODERATOR1")}""")
+            comment.save()
+    except Exception as e:
+        PrintException()
+        time.sleep(60)
+
+
 def monitor_submission():
     while True:
         try:
@@ -255,7 +285,7 @@ def monitor_submission():
                             else:
                                 print("Self Text filtered : ", submission)
                                 message = send_to_modqueue(submission)
-                time.sleep(0.5)
+                time.sleep(2)
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
             time.sleep(60)
@@ -277,9 +307,7 @@ def monitor_comments():
 
                         if comment.author == "empleadoEstatalBot":
                             comment.mod.approve()
-                        if comment.is_submitter and comment.parent_id == (
-                            't3_' + comment.submission.id
-                        ) and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
+                        if comment.is_submitter and comment.parent_id == comment.link_id and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
                         ):
                             if has_submission_statement(comment):
                                 print('Submission ', comment.submission,
@@ -287,32 +315,8 @@ def monitor_comments():
                                 approve_submission(
                                     comment.submission,  comment, False)
                         if comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
-                            try:
-                                parent_comment = comment_body(
-                                    comment.id)
-                                gemini_result = gemini_detection(
-                                    comment.body, parent_comment, comment.link_title)
-                                if int(gemini_result['answer']) > 90:
-                                    # comment.mod.remove()
-                                    # removal_message = f"""Hi u/{comment.author}, Your comment has been flagged by our AI based system for the following reason : \n\n {
-                                    #    gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
-
-                                    # reply = comment.mod.send_removal_message(
-                                    #    message=removal_message, type='public_as_subreddit')
-
-                                    # reply.mod.distinguish()
-                                    # reply.mod.lock()
-                                    mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
-                                        comment.body}\n\nComment Link : {comment.link_permalink}{comment.id} \n\nBots reason for removal: {gemini_result['reason']}"""
-                                    mod_mail.create(
-                                        subject=f"""Rule breaking comment by Gemini - {
-                                            gemini_result['answer']}%""",
-                                        body=mod_mail_body,
-                                        recipient=f"""u/{os.environ.get("MODERATOR1")}""")
-                                    comment.save()
-                            except Exception as e:
-                                PrintException()
-
+                            gemini_comment(comment)
+                    time.sleep(2)
                 except Exception as e:
                     PrintException()
                     time.sleep(60)
