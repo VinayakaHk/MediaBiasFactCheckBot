@@ -121,9 +121,9 @@ def send_to_modqueue(submission):
         message = submission.mod.send_removal_message(
             message=f"""Your submission has been filtered until you comment a Submission Statement.
 Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement
-to get your post approved. Make sure its about 2-3 paragraphs long.
+to get your post approved. Make sure its about 1-2 paragraphs long.
 \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{
-                os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
+                os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ .""", type='public_as_subreddit'
         )
         message.mod.lock()
         return message
@@ -157,7 +157,7 @@ def get_reply_text(domains, urls, comment=None):
         comment.body) if comment else ""
 
     submission_statement = f"""
-📣 **[Submission Statement from OP]({comment.permalink})**:
+📣 **[Submission Statement by OP]({comment.permalink})**:
 > {formatted_string}
 """ if comment else ""
 

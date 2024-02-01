@@ -69,13 +69,7 @@ def gemini_detection(input_string, parent_comment, link_title):
         while retry:
             prompt_parts = [
                 """You are a moderator for the subreddit community %s where the rules are as follows, \n\n
-Rule 1 : Follow Reddit Content Policy - 
-
-Do not call for the Harm/death of an individual and/or a group online or offline. 
-Do not involve in hate-mongering or dog-whistling and pejorative use of slurs.\n
-
-Rule 2 : Abuse, Trolling and Personal Attacks - 
-No unwelcome content or hostility like Spamming/Trolling/Abuse/Personal Attacks which negatively affects the subreddit atmosphere.\n\n
+Rule 2 : Abuse and Personal Attacks - No Spamming/Abuse/Personal Attacks.\n\n
 
 For context, %s is the title of the article and %s is the parent comment that OP is replying to. Do not judge these comments as these are just for context. 
 
