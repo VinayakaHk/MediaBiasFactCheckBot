@@ -272,9 +272,9 @@ def monitor_submission():
                     print("Submission : ", submission, "Approved : ", submission.approved,
                           submission.removed_by)
                     store_submission_in_mongo(submission)
-                    if(submission.author == 'AutoModerator'):
+                    if (submission.author == 'AutoModerator'):
                         submission.mod.approve()
-                    else if submission != None and submission.approved == False and submission.removed == False :
+                    elif submission != None and submission.approved == False and submission.removed == False:
                         if not submission.is_self:
                             print("Submission filtered : ", submission)
 
