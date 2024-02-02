@@ -95,7 +95,6 @@ def store_submission_in_mongo(submission):
 def store_comment_in_mongo(comment):
     try:
         global db
-        print("comment in mongodb", comment)
         comments_collection = db['comments']
         if_comment = comments_collection.find_one({'comment_id': comment.id})
         if (if_comment == None):

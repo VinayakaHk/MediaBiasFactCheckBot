@@ -75,7 +75,7 @@ For context, %s is the title of the article and %s is the parent comment that OP
 
 Now based on this information , tell me in a json format 
 if this comment Starting and ending with \"\"\" violates any of the rules \n\n\"\"\"\"%s\"\"\"\n\n
-Your answer should range from  {"answer": "0" , "reason" : "<your reply>" }  or {"answer": "99", "reason" : "<your reply>"}\n where 1-99 is the probability where  1 percent , doesn't violate the rules and 99 percent the answer violates the rules.
+Your answer should range from  {"answer": "0" , "reason" : "<your reply>" }  or {"answer": "91", "reason" : "<your reply>"}\n where 0-91 is the probability where  0 percent -  doesn't violate the rules.\n 91 percent - the answer violates the rules.
 make sure <your reply> is detailed and sophisticated. do not write anything beyond answer and reason."""
                 % (os.environ.get('SUBREDDIT'), link_title, parent_comment, input_string),
             ]

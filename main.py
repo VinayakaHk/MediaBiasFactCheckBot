@@ -123,7 +123,7 @@ def send_to_modqueue(submission):
 Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement
 to get your post approved. Make sure its about 1-2 paragraphs long.
 \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{
-                os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ .""", type='public_as_subreddit'
+                os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
         )
         message.mod.lock()
         return message
@@ -142,11 +142,8 @@ def add_prefix_to_paragraphs(input_string):
 
 
 def get_reply_text(domains, urls, comment=None):
-    archive_links = f"""
-🔗 **Archive**:
----
+    archive_links = f"""\n\n🔗 **Bypass paywalls**:
 """
-
     for index, url in enumerate(urls):
         archive_links += f"""* [archive.today - {domains[index]}
             ](https://archive.is/submit/?submitid=&url={url}) | """
@@ -161,8 +158,7 @@ def get_reply_text(domains, urls, comment=None):
 > {formatted_string}
 """ if comment else ""
 
-    base_text = f"""
----
+    base_text = f"""---
 **Post Approved**: Your submission has been approved!
 {archive_links}
 {submission_statement}
@@ -189,8 +185,6 @@ def approve_submission(submission, comment=None, is_self=True):
     try:
         submission.mod.approve()
         submission.comments.replace_more(limit=None)
-        print("comment from edit_geoind_comment : ", comment)
-        # Delete previous comments made by the bot
         for top_level_comment in submission.comments:
             if (top_level_comment.author == reddit.user.me()):
                 top_level_comment.delete()
@@ -240,7 +234,11 @@ def gemini_comment(comment):
         gemini_result = gemini_detection(
             comment.body, parent_comment, comment.link_title)
         if int(gemini_result['answer']) > 90:
+            subject_body = f"""Rule breaking comment by Gemini - {
+                gemini_result['answer']}%"""
             if (comment.parent_id == comment.link_id):
+                subject_body = f"""Rule breaking comment Removed by Gemini - {
+                    gemini_result['answer']}%"""
                 comment.mod.remove()
                 removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
                     gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
@@ -252,8 +250,7 @@ def gemini_comment(comment):
             mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
                 comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {gemini_result['reason']}"""
             mod_mail.create(
-                subject=f"""Rule breaking comment by Gemini - {
-                    gemini_result['answer']}%""",
+                subject=subject_body,
                 body=mod_mail_body,
                 recipient=f"""u/{os.environ.get("MODERATOR1")}""")
             comment.save()
@@ -276,7 +273,8 @@ def monitor_submission():
                         submission.mod.approve()
                     elif submission != None and submission.approved == False and submission.removed == False:
                         if not submission.is_self:
-                            print("Submission filtered : ", submission)
+
+                            print("Submission URL filtered: ", submission)
 
                             message = send_to_modqueue(submission)
                         else:
@@ -314,8 +312,8 @@ def monitor_comments():
                                 print('Submission ', comment.submission,
                                       'approved. SS Comment : ', comment)
                                 approve_submission(
-                                    comment.submission,  comment, False)
-                        if comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 1000):
+                                    comment.submission,  comment, bool(comment.submission.is_self))
+                        elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 500):
                             gemini_comment(comment)
                     time.sleep(2)
                 except Exception as e:
