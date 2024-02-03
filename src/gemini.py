@@ -121,7 +121,12 @@ make sure <your reply> is detailed and sophisticated. do not write anything beyo
                 else:
                     return ({"answer": "0", "reason": "API ERROR"})
             if (response.text):
-                return (json.loads(response.text))
+                try:
+                    response = json.loads(response.text)
+                    return response
+                except:
+                    print("gemini response : ", response.text)
+                    return ({"answer": "0", "reason": "API ERROR"})
             else:
                 return ({"answer": "0", "reason": "API ERROR"})
     except Exception as e:
