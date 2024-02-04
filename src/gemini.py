@@ -95,9 +95,9 @@ make sure <your reply> is detailed and sophisticated. do not write anything beyo
 
                 text = str(response.candidates[0].content.parts[0])
                 json_match = re.search(r'{.+}', text)
-                json_obj = {}
                 # Check if a match is found
                 if json_match:
+                    json_obj = {}
                     # Extract the matched JSON string
                     json_str = json_match.group(0)
                     json_str = json_str.replace('\\"', '"')
@@ -116,8 +116,11 @@ make sure <your reply> is detailed and sophisticated. do not write anything beyo
                         reason = reason_match.group(1)
                         reason = re.sub(r'"|\\\\"', '\'', reason)
                         json_str2 = json_str2 + ', "reason":"' + reason + '"}'
-
-                        json_obj = json.loads(json_str2)
+                        try:
+                            json_obj = json.loads(json_str2)
+                        except:
+                            print('gemini response: ', json_str2)
+                            return ({"answer": "0", "reason": "API ERROR"})
                     return json_obj
                 else:
                     return ({"answer": "0", "reason": "API ERROR"})
