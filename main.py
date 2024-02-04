@@ -313,7 +313,7 @@ def monitor_comments():
                                       'approved. SS Comment : ', comment)
                                 approve_submission(
                                     comment.submission,  comment, bool(comment.submission.is_self))
-                        elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 500):
+                        elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 100):
                             gemini_comment(comment)
                     time.sleep(2)
                 except Exception as e:
