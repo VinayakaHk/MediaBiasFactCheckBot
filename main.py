@@ -158,9 +158,7 @@ def get_reply_text(domains, urls, comment=None):
 > {formatted_string}
 """ if comment else ""
 
-    base_text = f"""---
-**Post Approved**: Your submission has been approved!
-{archive_links}
+    base_text = f"""{archive_links}
 {submission_statement}
 ***
 📜 Community Reminder: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.

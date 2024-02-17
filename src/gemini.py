@@ -127,6 +127,8 @@ make sure <your reply> is detailed and sophisticated. do not write anything beyo
             if (response.text):
                 try:
                     response = json.loads(response.text)
+                    response_val = int(gemini_result['answer'])
+                    print('response_val = ', response_val)
                     return response
                 except:
                     print("gemini response : ", response.text)
