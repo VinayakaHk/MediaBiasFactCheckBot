@@ -29,13 +29,13 @@ def phind_detection( comment,mod_mail):
         from selenium.webdriver.support.ui import WebDriverWait
         from selenium.webdriver.support import expected_conditions as EC
         from selenium.webdriver.common.keys import Keys
-
+        from selenium.webdriver.chrome.service import Service
         # Set up Chrome options
         options = webdriver.ChromeOptions()
         options.add_argument("--start-maximized")  # Optionally adjust window size
-
+        service = Service(executable_path="../chromedriver")
         # Initialize the web driver
-        driver = webdriver.Chrome(executable_path='chromedriver',options=options)
+        driver = webdriver.Chrome(service= service,options=options)
         # Navigate to the picYard website
         driver.get("https://www.phind.com/")
         time.sleep(2)  # Asynchronous sleep
