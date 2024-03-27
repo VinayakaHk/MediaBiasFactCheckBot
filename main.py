@@ -271,7 +271,7 @@ def monitor_comments():
     while True:
         try:
             print('monitor_comments:')
-            for comment in subreddit.stream.comments():
+            for comment in subreddit.stream.comments(skip_existing=True):
                 try:
                     if comment is not None:
                         print("comment: ", comment,
