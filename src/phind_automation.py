@@ -35,7 +35,7 @@ def phind_detection( comment,mod_mail):
         options.add_argument("--start-maximized")  # Optionally adjust window size
 
         # Initialize the web driver
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(executable_path='chromedriver',options=options)
         # Navigate to the picYard website
         driver.get("https://www.phind.com/")
         time.sleep(2)  # Asynchronous sleep
