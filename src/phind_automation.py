@@ -1,8 +1,6 @@
 import traceback
 import re
 import time
-import asyncio
-import asgiref
 
 MAX_RETRIES = 3  # Maximum number of retry attempts
 RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt

@@ -10,7 +10,6 @@ import json
 import re
 import os
 import praw
-import asyncio
 from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo
 from src.phind_automation import phind_detection
 
