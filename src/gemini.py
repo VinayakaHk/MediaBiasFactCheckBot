@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
+
 genai.configure(api_key=os.environ.get("GEMINI"))
 
 # Set up the model
@@ -75,8 +76,8 @@ For context, %s is the title of the article and %s is the parent comment that OP
 
 Now based on this information , tell me in a json format 
 if this comment Starting and ending with \"\"\" violates any of the rules \n\n\"\"\"\"%s\"\"\"\n\n
-Your answer should range from  {"answer": "0" , "reason" : "<your reply>" }  or {"answer": "91", "reason" : "<your reply>"}\n where 0-91 is the probability where  0 percent -  doesn't violate the rules.\n 91 percent - the answer violates the rules.
-make sure <your reply> is detailed and sophisticated. do not write anything beyond answer and reason."""
+Your answer should range from  {answer : 0 ,reason : <your reply>  } or   `### 92 ### <answer> ###` \n where 0-92 is the probability where  0 percent -  doesn't violate the rules.\n 92 percent - the answer violates the rules.
+make sure <your reply> is detailed and sophisticated. do not write anything before  { and  after  } """
                 % (os.environ.get('SUBREDDIT'), link_title, parent_comment, input_string),
             ]
             try:
@@ -86,7 +87,7 @@ make sure <your reply> is detailed and sophisticated. do not write anything beyo
                 print(f"""\033An exception occurred: {
                     e}. Retrying in 2 seconds...\033""", e)
                 time.sleep(2)
-            if (response.prompt_feedback.block_reason):
+            if (response.prompt_feedback.block_reason): # { safety : HIGH  }
                 return {"answer": "100", "reason": "The comment is extremely toxic. It violates Rule 1 (Follow Reddit's content policy) and Rule 2 (Abuse, trolling, or personal attacks)."}
 
             if (response._result.candidates):

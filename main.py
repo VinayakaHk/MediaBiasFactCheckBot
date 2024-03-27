@@ -10,9 +10,10 @@ import json
 import re
 import os
 import praw
-# import pprint
-from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo, comment_body
-from src.gemini import gemini_detection
+import asyncio
+from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo
+from src.phind_automation import phind_detection
+
 load_dotenv()
 
 connect_to_mongo()
@@ -35,7 +36,7 @@ print('subreddit ', subreddit)
 mod_mail = subreddit.modmail
 
 
-def PrintException():
+def print_exception():
     exc_type, exc_obj, tb = sys.exc_info()
     f = tb.tb_frame
     lineno = tb.tb_lineno
@@ -58,7 +59,7 @@ def print_mbfc_text(domain, obj):
         text += f"|Credibility Rating|{obj['credibility']}|\n"
 
     text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {
-        obj['name']}'s review [here]({obj['profile']}).
+    obj['name']}'s review [here]({obj['profile']}).
 ***"""
     return text
 
@@ -78,13 +79,13 @@ def mbfc_political_bias(domain_url):
             return None
 
     except Exception as e:
-        PrintException()
+        print('Exception ', e)
+        print_exception()
         time.sleep(60)
 
 
 # Function to check if a submission contains a submission statement in its comments
 def has_submission_statement(comment):
-
     lower_comment_body = comment.body.lower()
     if lower_comment_body.startswith(
             "submission statement") or lower_comment_body.startswith("ss"):
@@ -95,7 +96,9 @@ def has_submission_statement(comment):
                 comment.mod.remove()
                 comment.mod.lock()
                 reply = comment.reply(
-                    'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a new comment. Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment'
+                    'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a '
+                    'new comment. Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited '
+                    'comment'
                 )
                 reply.mod.distinguish()
                 reply.mod.lock()
@@ -106,7 +109,8 @@ def has_submission_statement(comment):
             comment.mod.remove()
             comment.mod.lock()
             reply = comment.reply(
-                'Your Submission Statement should start with the term "SS" or "Submission Statement" (without the " ").  Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment.'
+                'Your Submission Statement should start with the term "SS" or "Submission Statement" (without the " '
+                '").  Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment.'
             )
             reply.mod.distinguish()
             reply.mod.lock()
@@ -123,7 +127,7 @@ def send_to_modqueue(submission):
 Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement
 to get your post approved. Make sure its about 1-2 paragraphs long.
 \n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{
-                os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
+            os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
         )
         message.mod.lock()
         return message
@@ -131,7 +135,7 @@ to get your post approved. Make sure its about 1-2 paragraphs long.
         print(f"API Exception: {e}")
         time.sleep(60)
     except:
-        PrintException()
+        print_exception()
         time.sleep(60)
 
 
@@ -148,7 +152,7 @@ def get_reply_text(domains, urls, comment=None):
         archive_links += f"""* [archive.today - {domains[index]}
             ](https://archive.is/submit/?submitid=&url={url}) | """
         archive_links += f"""[Google Webcache - {
-            domains[index]}](http://webcache.googleusercontent.com/search?q=cache:{url})\n"""
+        domains[index]}](http://webcache.googleusercontent.com/search?q=cache:{url})\n"""
 
     formatted_string = add_prefix_to_paragraphs(
         comment.body) if comment else ""
@@ -159,11 +163,8 @@ def get_reply_text(domains, urls, comment=None):
 """ if comment else ""
 
     base_text = f"""{archive_links}
-{submission_statement}
-***
-📜 Community Reminder: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments may be removed.
-***
-"""
+{submission_statement} *** 📜 Community Reminder: Let’s keep our discussions civil, respectful, and on-topic. Abide 
+by the subreddit rules. Rule-violating comments may be removed. ***"""
 
     for domain in domains:
         if domain:
@@ -221,41 +222,48 @@ def approve_submission(submission, comment=None, is_self=True):
         print(f"API Exception: {e}")
         time.sleep(60)
     except:
-        PrintException()
+        print_exception()
         time.sleep(60)
 
-
-def gemini_comment(comment):
+def phind_comment(comment):
     try:
         global mod_mail
-        parent_comment = comment_body(comment.id)
-        gemini_result = gemini_detection(
-            comment.body, parent_comment, comment.link_title)
-        if int(gemini_result['answer']) > 90:
-            subject_body = f"""Rule breaking comment by Gemini - {
-                gemini_result['answer']}%"""
+
+        phind_result = phind_detection(comment.body)
+
+        while True :
+            if len(phind_result) == 0:
+                time.sleep(5)
+            else:
+                break
+
+        print('phind_result',phind_result)
+
+        if phind_result.startswith('True'):
+            reason = phind_result.split('True')
+            subject_body = f"""Rule breaking comment Removed by AI -"""
+
             if (comment.parent_id == comment.link_id):
-                subject_body = f"""Rule breaking comment Removed by Gemini - {
-                    gemini_result['answer']}%"""
                 comment.mod.remove()
                 removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
-                    gemini_result['reason']} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+                reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
 
                 reply = comment.mod.send_removal_message(
                     message=removal_message, type='public_as_subreddit')
 
                 reply.mod.lock()
             mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
-                comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {gemini_result['reason']}"""
+            comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {reason[0]}"""
             mod_mail.create(
                 subject=subject_body,
                 body=mod_mail_body,
                 recipient=f"""u/{os.environ.get("MODERATOR1")}""")
             comment.save()
-    except Exception as e:
-        PrintException()
-        time.sleep(60)
 
+
+    except Exception as e:
+        print_exception()
+        time.sleep(60)
 
 def monitor_submission():
     while True:
@@ -287,7 +295,7 @@ def monitor_submission():
             print(f"API Exception: {e}")
             time.sleep(60)
         except:
-            PrintException()
+            print_exception()
             time.sleep(60)
 
 
@@ -297,7 +305,7 @@ def monitor_comments():
             print('monitor_comments:')
             for comment in subreddit.stream.comments():
                 try:
-                    if (comment != None):
+                    if comment is not None:
                         print("comment: ", comment,
                               "author : ", comment.author)
                         store_comment_in_mongo(comment)
@@ -310,18 +318,19 @@ def monitor_comments():
                                 print('Submission ', comment.submission,
                                       'approved. SS Comment : ', comment)
                                 approve_submission(
-                                    comment.submission,  comment, bool(comment.submission.is_self))
-                        elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (comment.author not in whitelisted_authors_from_Gemini) and (len(comment.body) <= 100):
-                            gemini_comment(comment)
+                                    comment.submission, comment, bool(comment.submission.is_self))
+                        elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (
+                                comment.author not in whitelisted_authors_from_Gemini):
+                            phind_comment(comment)
                     time.sleep(2)
                 except Exception as e:
-                    PrintException()
+                    print_exception()
                     time.sleep(60)
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
             time.sleep(60)
         except:
-            PrintException()
+            print_exception()
             time.sleep(60)
 
 
@@ -332,20 +341,17 @@ def main():
             future_comments = executor.submit(monitor_comments)
         if future_submission.exception():
             print(f"""Error in monitor_submission{
-                  future_submission.exception()}""")
+            future_submission.exception()}""")
         if future_comments.exception():
             print(f"""Error in monitor_comments: {
-                  future_comments.exception()}""")
+            future_comments.exception()}""")
     except KeyboardInterrupt:
         print('Monitoring stopped.')
         exit()
-    except:
-        print("Error ")
-        process_submission.terminate()
-        process_comments.terminate()
+    except Exception as e:
+        print("Error ", e)
         time.sleep(60)
-        process_submission.start()
-        process_comments.start()
+        main()
 
 
 if __name__ == '__main__':
