@@ -82,8 +82,8 @@ def phind_detection( comment,mod_mail):
 
         driver.quit()
         # return answer
-        if answer.startswith('True'):
-            reason = answer.split('True')
+        if answer.startswith('True.'):
+            reason = answer.split('True.')
             print('reason', reason[1])
             subject_body = f"""Rule breaking comment Removed by AI -"""
 
