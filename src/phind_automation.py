@@ -1,7 +1,7 @@
 import traceback
 import re
 import time
-
+import os
 MAX_RETRIES = 3  # Maximum number of retry attempts
 RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
 
@@ -22,7 +22,7 @@ def retry_on_failure(func, *args, **kwargs):
 def extract_text_from_element(element):
     return element.text.strip()
 
-def phind_detection(input_string):
+def phind_detection( comment,mod_mail):
     try:
         from selenium import webdriver
         from selenium.webdriver.common.by import By
@@ -41,7 +41,7 @@ def phind_detection(input_string):
         time.sleep(2)  # Asynchronous sleep
         textbox = driver.find_element(By.CSS_SELECTOR, '.searchbox-textarea')
         textbox.send_keys(
-            f"You are a moderator who disallows abuse, trolling and personal attacks under Rule 2. Tell me if this comment violates the rule {input_string}. Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
+            f"You are a moderator who disallows abuse, trolling and personal attacks under Rule 2. Tell me if this comment violates the rule {comment.body}. Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
             Keys.ENTER)
 
         time.sleep(2)  # Asynchronous sleep
@@ -79,8 +79,35 @@ def phind_detection(input_string):
             text = extract_text_from_element(elem)
             answer += text
         print('answer : ', answer)
+
         driver.quit()
-        return answer
+        # return answer
+        if answer.startswith('True'):
+            reason = answer.split('True')
+            print('reason', reason[1])
+            subject_body = f"""Rule breaking comment Removed by AI -"""
+
+            if (comment.parent_id == comment.link_id):
+                comment.mod.remove()
+                removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
+                reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+
+                reply = comment.mod.send_removal_message(
+                    message=removal_message, type='public_as_subreddit')
+
+                reply.mod.lock()
+            mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
+            comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {reason[1]}"""
+            mod_mail.create(
+                subject=subject_body,
+                body=mod_mail_body,
+                recipient=f"""u/{os.environ.get("MODERATOR1")}""")
+            comment.save()
+        elif answer.startswith('False'): 
+            print('Comment Does not violate the rules')
+            comment.save()
+        else : 
+            print('API error')
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -98,5 +125,3 @@ def phind_detection(input_string):
         print(f"An error occurred: {e}")
     finally:
         driver.quit()
-
-phind_detection('this is a scam fuck you lol')

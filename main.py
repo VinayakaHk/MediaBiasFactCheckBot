@@ -228,38 +228,7 @@ def phind_comment(comment):
     try:
         global mod_mail
 
-        phind_result = phind_detection(comment.body)
-
-        while True :
-            if len(phind_result) == 0:
-                time.sleep(5)
-            else:
-                break
-
-        print('phind_result',phind_result)
-
-        if phind_result.startswith('True'):
-            reason = phind_result.split('True')
-            subject_body = f"""Rule breaking comment Removed by AI -"""
-
-            if (comment.parent_id == comment.link_id):
-                comment.mod.remove()
-                removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
-                reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
-
-                reply = comment.mod.send_removal_message(
-                    message=removal_message, type='public_as_subreddit')
-
-                reply.mod.lock()
-            mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
-            comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {reason[0]}"""
-            mod_mail.create(
-                subject=subject_body,
-                body=mod_mail_body,
-                recipient=f"""u/{os.environ.get("MODERATOR1")}""")
-            comment.save()
-
-
+        phind_detection(comment,mod_mail)
     except Exception as e:
         print_exception()
         time.sleep(60)
