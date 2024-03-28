@@ -82,10 +82,11 @@ def phind_detection( comment,mod_mail):
         if answer.startswith('True.'):
             reason = answer.split('True.')
             print('reason', reason[1])
-            subject_body = f"""Rule breaking comment Removed by AI -"""
+            subject_body = f"""Rule breaking comment Detected by AI """
             print('comment.parent_id',comment.parent_id)
             print('comment.link_id',comment.link_id)
             if comment.parent_id == comment.link_id:
+                subject_body = f"""Rule breaking comment removed by AI """
                 comment.mod.remove()
                 removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
                 reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
