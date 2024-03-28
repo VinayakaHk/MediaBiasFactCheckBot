@@ -31,12 +31,7 @@ def phind_detection( comment,mod_mail):
         from selenium.webdriver.common.keys import Keys
         from selenium.webdriver.firefox.service import Service
         # Set up Chrome options
-        gecko_driver_path = './geckodriver'
-        options = webdriver.FirefoxOptions()
-        options.add_argument("--start-maximized")  # Optionally adjust window size
-        # Initialize the web driver
-        service = Service(gecko_driver_path)
-        driver = webdriver.Firefox(service=service,options=options)
+        driver = webdriver.Firefox()
         # Navigate to the picYard website
         driver.get("https://www.phind.com/")
         time.sleep(2)  # Asynchronous sleep
