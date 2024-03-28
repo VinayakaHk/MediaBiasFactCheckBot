@@ -4,7 +4,12 @@ import time
 import os
 MAX_RETRIES = 3  # Maximum number of retry attempts
 RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
-
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
+from pyvirtualdisplay import Display
 
 def retry_on_failure(func, *args, **kwargs):
     retries = 0
@@ -24,14 +29,10 @@ def extract_text_from_element(element):
 
 def phind_detection( comment,mod_mail):
     try:
-        from selenium import webdriver
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
-        from selenium.webdriver.support import expected_conditions as EC
-        from selenium.webdriver.common.keys import Keys
-        from selenium.webdriver.firefox.service import Service
+        display = Display(visible=0, size=(800, 600))
+        display.start()
         # Set up Chrome options
-        driver = webdriver.Firefox()
+        driver = webdriver.Chrome()
         # Navigate to the picYard website
         driver.get("https://www.phind.com/")
         time.sleep(2)  # Asynchronous sleep
@@ -77,6 +78,7 @@ def phind_detection( comment,mod_mail):
         print('answer : ', answer)
 
         driver.quit()
+        display.stop()
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
