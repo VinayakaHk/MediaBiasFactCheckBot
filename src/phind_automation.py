@@ -11,9 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from pyvirtualdisplay import Display
 
-display = Display(visible=0, size=(800, 600))
-display.start()
-driver = webdriver.Chrome()
+
 def retry_on_failure(func, *args, **kwargs):
     retries = 0
     while retries < MAX_RETRIES:
@@ -32,7 +30,10 @@ def extract_text_from_element(element):
 
 def phind_detection( comment,mod_mail):
     try:
-        # Navigate to the picYard website
+        display = Display(visible=0, size=(800, 600))
+        display.start()
+        driver = webdriver.Chrome()
+
         driver.get("https://www.phind.com/")
         time.sleep(2)  # Asynchronous sleep
         textbox = driver.find_element(By.CSS_SELECTOR, '.searchbox-textarea')
@@ -75,7 +76,8 @@ def phind_detection( comment,mod_mail):
             text = extract_text_from_element(elem)
             answer += text
         print('answer : ', answer)
-
+        driver.quit()
+        display.stop()
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
