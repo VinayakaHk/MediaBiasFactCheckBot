@@ -11,6 +11,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from pyvirtualdisplay import Display
 
+display = Display(visible=0, size=(800, 600))
+display.start()
+driver = webdriver.Chrome()
 def retry_on_failure(func, *args, **kwargs):
     retries = 0
     while retries < MAX_RETRIES:
@@ -29,10 +32,6 @@ def extract_text_from_element(element):
 
 def phind_detection( comment,mod_mail):
     try:
-        display = Display(visible=0, size=(800, 600))
-        display.start()
-        # Set up Chrome options
-        driver = webdriver.Chrome()
         # Navigate to the picYard website
         driver.get("https://www.phind.com/")
         time.sleep(2)  # Asynchronous sleep
@@ -77,15 +76,14 @@ def phind_detection( comment,mod_mail):
             answer += text
         print('answer : ', answer)
 
-        driver.quit()
-        display.stop()
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
             print('reason', reason[1])
             subject_body = f"""Rule breaking comment Removed by AI -"""
-
-            if (comment.parent_id == comment.link_id):
+            print('comment.parent_id',comment.parent_id)
+            print('comment.link_id',comment.link_id)
+            if comment.parent_id == comment.link_id:
                 comment.mod.remove()
                 removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
                 reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
