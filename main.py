@@ -162,7 +162,7 @@ def get_reply_text(domains, urls, comment=None):
 """ if comment else ""
 
     base_text = f"""{archive_links}
-{submission_statement} *** 📜 Community Reminder: Let’s keep our discussions civil, respectful, and on-topic. Abide 
+{submission_statement} \n\n*** 📜 Community Reminder: Let’s keep our discussions civil, respectful, and on-topic. Abide 
 by the subreddit rules. Rule-violating comments may be removed. ***"""
 
     for domain in domains:
@@ -231,7 +231,6 @@ def phind_comment(comment):
         phind_detection(comment,mod_mail)
     except Exception as e:
         print_exception()
-        time.sleep(60)
 
 def monitor_submission():
     while True:

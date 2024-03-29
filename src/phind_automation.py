@@ -28,7 +28,7 @@ def retry_on_failure(func, *args, **kwargs):
 def extract_text_from_element(element):
     return element.text.strip()
 
-def phind_detection( comment,mod_mail):
+def phind_detection(comment,mod_mail):
     try:
         display = Display(visible=0, size=(800, 600))
         display.start()
