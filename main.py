@@ -10,7 +10,7 @@ import json
 import re
 import os
 import praw
-from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo
+from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo,comment_body
 from src.phind_automation import phind_detection
 
 load_dotenv()
@@ -227,8 +227,8 @@ def approve_submission(submission, comment=None, is_self=True):
 def phind_comment(comment):
     try:
         global mod_mail
-
-        phind_detection(comment,mod_mail)
+        parent_comment = comment_body(comment.id)
+        phind_detection(comment, mod_mail,parent_comment)
     except Exception as e:
         print_exception()
 

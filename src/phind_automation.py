@@ -28,7 +28,7 @@ def retry_on_failure(func, *args, **kwargs):
 def extract_text_from_element(element):
     return element.text.strip()
 
-def phind_detection(comment,mod_mail):
+def phind_detection(comment,mod_mail,parent_comment):
     try:
         display = Display(visible=0, size=(800, 600))
         display.start()
@@ -38,7 +38,7 @@ def phind_detection(comment,mod_mail):
         time.sleep(2)  # Asynchronous sleep
         textbox = driver.find_element(By.CSS_SELECTOR, '.searchbox-textarea')
         textbox.send_keys(
-            f"You are a moderator who disallows abuse, trolling and personal attacks under Rule 2. Tell me if this comment violates the rule {comment.body}. Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
+            f"For context , {comment.link_title} is the title and {comment.link_url} is the article. The person is repling to ```{parent_comment}``` . Now, You are a moderator who disallows abuse, trolling and personal attacks under Rule 2. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
             Keys.ENTER)
 
         time.sleep(2)  # Asynchronous sleep
