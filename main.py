@@ -192,7 +192,7 @@ def approve_submission(submission, comment=None, is_self=True):
             domain = [domain]
             url = [url]
             reply_text = get_reply_text(domain, url, comment)
-            reply = submission.reply(reply_text)
+            reply = submission.reply(body=reply_text)
             reply.mod.distinguish(sticky=True)
             reply.mod.lock()
         else:
