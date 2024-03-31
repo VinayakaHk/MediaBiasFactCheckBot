@@ -2,7 +2,7 @@
 # from pymongo import MongoClient
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
-
+from threading import Thread
 import time
 import sys
 import linecache
@@ -228,7 +228,8 @@ def phind_comment(comment):
     try:
         global mod_mail
         parent_comment = comment_body(comment.id)
-        phind_detection(comment, mod_mail,parent_comment)
+        Thread(target=phind_detection, args=(comment, mod_mail,parent_comment, )).start()
+        # phind_detection(comment, mod_mail,parent_comment)
     except Exception as e:
         print_exception()
 
