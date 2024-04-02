@@ -82,10 +82,7 @@ def phind_detection(comment,mod_mail,parent_comment):
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
-            print('reason', reason[1])
             subject_body = f"""Rule breaking comment Detected by AI """
-            print('comment.parent_id',comment.parent_id)
-            print('comment.link_id',comment.link_id)
             if comment.parent_id == comment.link_id:
                 subject_body = f"""Rule breaking comment removed by AI """
                 comment.mod.remove()
