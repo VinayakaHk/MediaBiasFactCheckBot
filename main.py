@@ -10,7 +10,7 @@ import json
 import re
 import os
 import praw
-from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo,comment_body
+from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo, comment_body
 from src.phind_automation import phind_detection
 
 load_dotenv()
@@ -145,84 +145,80 @@ def add_prefix_to_paragraphs(input_string):
 
 
 def get_reply_text(domains, urls, comment=None):
-    archive_links = f"""\n\n🔗 **Bypass paywalls**:
-"""
-    for index, url in enumerate(urls):
-        archive_links += f"""* [archive.today - {domains[index]}
-            ](https://archive.is/submit/?submitid=&url={url}) | """
-        archive_links += f"""[Google Webcache - {
-        domains[index]}](http://webcache.googleusercontent.com/search?q=cache:{url})\n"""
+    try:
+        archive_links = f"""\n\n🔗 **Bypass paywalls**:\n\n"""
+        for index, url in enumerate(urls):
+            archive_links += f"""* [archive.today - {domains[index]}
+                ](https://archive.is/submit/?submitid=&url={url}) | """
+            archive_links += f"""[Google Webcache - {
+            domains[index]}](http://webcache.googleusercontent.com/search?q=cache:{url})\n"""
 
-    formatted_string = add_prefix_to_paragraphs(
-        comment.body) if comment else ""
+        formatted_string = add_prefix_to_paragraphs(
+            comment.body) if comment else ""
 
-    submission_statement = f"""
-📣 **[Submission Statement by OP]({comment.permalink})**:
-> {formatted_string}
-""" if comment else ""
+        submission_statement = f"""📣 **[Submission Statement by OP]({comment.permalink})**:\n> {formatted_string}""" if comment else ""
 
-    base_text = f"""{archive_links}
-{submission_statement} \n\n**📜 Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide 
-by the subreddit rules. Rule-violating comments may be removed. """
+        base_text = f"""{archive_links}\n\n{submission_statement} \n\n**📜 Community Reminder**: Let’s keep our discussions civil, respectful, and on-topic. Abide by the subreddit rules. Rule-violating comments will be removed."""
+        domains = list(set(domains))
+        for domain in domains:
+            if domain:
+                additional_text = mbfc_political_bias(domain)
+                if additional_text:
+                    base_text += "\n\n" + additional_text
 
-    for domain in domains:
-        if domain:
-            additional_text = mbfc_political_bias(domain)
-            if additional_text:
-                base_text += "\n\n" + additional_text
+        footer = f"""\n\n❓ Questions or concerns? [Contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})."""
 
-    footer = f"""\n\n❓ Questions or concerns? [Contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')}).
-"""
-
-    return base_text + footer
+        return base_text + footer
+    except Exception as e:
+        print('Exception occurred trying to create submission statement: ', e)
 
 
-# Function to approve a submission if it has a submission statement in its comments
-# def approve_submission(submission, comment=None, is_self=True):
-#     try:
-#         submission.mod.approve()
-#         submission.comments.replace_more(limit=None)
-#         for top_level_comment in submission.comments:
-#             if top_level_comment.author == reddit.user.me():
-#                 top_level_comment.delete()
-#
-#         urls = []
-#         full_text = submission.selftext
-#         url_pattern = re.compile(r'\[?(https?://[^\s\]]+)')
-#         domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
-#
-#         # Extract URLs and domains from the selftext
-#         matches = url_pattern.findall(full_text)
-#         domains = domain_pattern.findall(full_text)
-#
-#         for match in matches:
-#             # Check if the URL is already in the list
-#             if match not in urls:
-#                 urls.append(match)
-#
-#         # Generate reply text using the extracted domains and URLs
-#         reply_text = get_reply_text(domains, urls, comment)
-#
-#         if not is_self:
-#             # For external links, reply with the generated text
-#             reply = submission.reply(body=reply_text)
-#             reply.mod.distinguish(sticky=True)
-#             reply.mod.lock()
-#         else:
-#             # For self-posts, reply with the generated text only if there are no domains
-#             if not domains:
-#                 reply = submission.reply(reply_text)
-#                 reply.mod.distinguish(sticky=True)
-#                 reply.mod.lock()
-#
-#     except praw.exceptions.RedditAPIException as e:
-#         print(f"API Exception: {e}")
-#         time.sleep(60)
-#     except Exception as e:
-#         print(f"Exception: {e}")
-#         time.sleep(60)
+def approve_submission_old(submission, comment=None, is_self=True):
+    try:
+        submission.mod.approve()
+        submission.comments.replace_more(limit=None)
+        for top_level_comment in submission.comments:
+            if (top_level_comment.author == reddit.user.me()):
+                top_level_comment.delete()
+        if (is_self == False):
+            url = str(submission.url)
+            domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
+            domain = [domain]
+            url = [url]
+            reply_text = get_reply_text(domain, url, comment)
+            reply = submission.reply(body=reply_text)
+            reply.mod.distinguish(sticky=True)
+            reply.mod.lock()
+        else:
+            full_text = submission.selftext
+            url_pattern = re.compile(r'(https?://[^\s]+)')
+            domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
+            urls = url_pattern.findall(full_text)
+            domains = domain_pattern.findall(full_text)
+            if (domains == []):
+                url = str(submission.url)
+                domain = re.search(
+                    'https?://([A-Za-z_0-9.-]+).*', url).group(1)
+                domain = [domain]
+                url = [url]
+                reply_text = get_reply_text(domain, url, comment)
+                reply = submission.reply(reply_text)
+                reply.mod.distinguish(sticky=True)
+                reply.mod.lock()
+            else:
+                reply_text = get_reply_text(domains, urls, comment)
 
-# Function to approve a submission if it has a submission statement in its comments
+                reply = submission.reply(reply_text)
+                reply.mod.distinguish(sticky=True)
+                reply.mod.lock()
+    except praw.exceptions.RedditAPIException as e:
+        print(f"API Exception: {e}")
+        time.sleep(60)
+    except:
+        print_exception()
+        time.sleep(60)
+
+
 def approve_submission(submission, comment=None, is_self=True):
     try:
         submission.mod.approve()
@@ -230,33 +226,46 @@ def approve_submission(submission, comment=None, is_self=True):
         for top_level_comment in submission.comments:
             if top_level_comment.author == reddit.user.me():
                 top_level_comment.delete()
-
-        urls = []
-        full_text = submission.selftext
-        url_pattern = re.compile(r'\[?(https?://[^\s\]]+)')
-        domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
-
-        # Extract URLs and domains from the selftext
-        matches = url_pattern.findall(full_text)
-        domains = domain_pattern.findall(full_text)
-
-        for match in matches:
-            # Check if the URL is already in the list
-            if match not in urls:
-                urls.append(match)
-
-        # Generate reply text using the extracted domains and URLs
-        reply_text = get_reply_text(domains, urls, comment)
-
         if not is_self:
-            # For external links, reply with the generated text
+            url = str(submission.url)
+            domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
+            domain = [domain]
+            url = [url]
+            reply_text = get_reply_text(domain, url, comment)
             reply = submission.reply(body=reply_text)
             reply.mod.distinguish(sticky=True)
             reply.mod.lock()
         else:
-            # For self-posts, reply with the generated text only if there are no domains
-            if not domains:
+            urls = []
+            domains = []
+            full_text = submission.selftext
+            # url_pattern = re.compile(r'\[?(https?://[^\s\]]+)')
+            # domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
+            url_pattern = re.compile(r'(https?://[^\]\s)]+)')
+            domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
+
+            url_matches = url_pattern.findall(full_text)
+            domain_matches = domain_pattern.findall(full_text)
+            if (domain_matches == []):
+                url = str(submission.url)
+                domain = re.search(
+                    'https?://([A-Za-z_0-9.-]+).*', url).group(1)
+                domain = [domain]
+                url = [url]
+                reply_text = get_reply_text(domain, url, comment)
                 reply = submission.reply(reply_text)
+                reply.mod.distinguish(sticky=True)
+                reply.mod.lock()
+            else:
+                # Extract URLs and domains from the selftext
+                for url, domain in zip(url_matches, domain_matches):
+                    # Check if the URL is already in the list
+                    if url not in urls:
+                        urls.append(url)
+                        domains.append(domain)
+                # Generate reply text using the extracted domains and URLs
+                reply_text = get_reply_text(domains, urls, comment)
+                reply = submission.reply(body=reply_text)
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
 
@@ -267,21 +276,23 @@ def approve_submission(submission, comment=None, is_self=True):
         print(f"Exception: {e}")
         time.sleep(60)
 
+
 def phind_comment(comment):
     try:
         global mod_mail
         parent_comment = comment_body(comment.id)
-        Thread(target=phind_detection, args=(comment, mod_mail,parent_comment, )).start()
+        Thread(target=phind_detection, args=(comment, mod_mail, parent_comment,)).start()
         # phind_detection(comment, mod_mail,parent_comment)
     except Exception as e:
         print_exception()
+
 
 def monitor_submission():
     while True:
         try:
             print('monitor_submission:')
 
-            for submission in subreddit.stream.submissions():
+            for submission in subreddit.stream.submissions(skip_existing=True):
                 if (submission != None):
                     print("Submission : ", submission, "Approved : ", submission.approved,
                           submission.removed_by)
@@ -314,7 +325,7 @@ def monitor_comments():
     while True:
         try:
             print('monitor_comments:')
-            for comment in subreddit.stream.comments():
+            for comment in subreddit.stream.comments(skip_existing=True):
                 try:
                     if comment is not None:
                         print("comment: ", comment,
