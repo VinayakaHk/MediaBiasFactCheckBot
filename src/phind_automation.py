@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from pyvirtualdisplay import Display
 
-
+from mongodb import store_phind_in_comments
 def retry_on_failure(func, *args, **kwargs):
     retries = 0
     while retries < MAX_RETRIES:
@@ -78,6 +78,7 @@ def phind_detection(comment,mod_mail,parent_comment):
         print('answer : ', answer)
         driver.quit()
         display.stop()
+        store_phind_in_comments(answer, comment.link_id)
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
@@ -89,7 +90,7 @@ def phind_detection(comment,mod_mail,parent_comment):
                 subject_body = f"""Rule breaking comment removed by AI """
                 comment.mod.remove()
                 removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
-                reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')})* """
+                reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')}&subject=Incorrectly removed the comment&message=Comment Link: {comment.link_permalink}{comment.id}%0A%0A Here's why : )* """
 
                 reply = comment.mod.send_removal_message(
                     message=removal_message, type='public_as_subreddit')

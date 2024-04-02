@@ -32,6 +32,18 @@ def PrintException():
                                                        line.strip(), exc_obj))
 
 
+def store_phind_in_comments(reason , comment_id):
+    try:
+        global db
+        comments_collection = db['comments']
+
+        comment = comments_collection.update_one(
+            {"comment_id": comment_id}, {"$set": {'ai_removal_reason' : reason} }
+        )
+    except Exception as e:
+        PrintException()
+
+
 def comment_body(comment_id):
     try:
         global db
