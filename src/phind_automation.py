@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from pyvirtualdisplay import Display
 
-from mongodb import store_phind_in_comments
+from .mongodb import store_phind_in_comments
 def retry_on_failure(func, *args, **kwargs):
     retries = 0
     while retries < MAX_RETRIES:
@@ -38,7 +38,7 @@ def phind_detection(comment,mod_mail,parent_comment):
         time.sleep(2)  # Asynchronous sleep
         textbox = driver.find_element(By.CSS_SELECTOR, '.searchbox-textarea')
         textbox.send_keys(
-            f"For context , {comment.link_title} is the title and {comment.link_url} is the article. The person is repling to ```{parent_comment}``` . Dont judge this comment as its just for context. Now, You are a moderator who disallows Verbal abuse strictly means using expletives and dehumanization under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
+            f"For context , {comment.link_title} is the title and {comment.link_url} is the article. The person is repling to ```{parent_comment}``` . Dont judge this comment as its just for context. Now, You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
             Keys.ENTER)
 
         time.sleep(2)  # Asynchronous sleep
