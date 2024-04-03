@@ -83,16 +83,16 @@ def phind_detection(comment,mod_mail,parent_comment):
         if answer.startswith('True.'):
             reason = answer.split('True.')
             subject_body = f"""Rule breaking comment Detected by AI """
-            if comment.parent_id == comment.link_id:
-                subject_body = f"""Rule breaking comment removed by AI """
-                comment.mod.remove()
-                removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
-                reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')}&subject=Incorrectly removed the comment&message=Comment Link: {comment.link_permalink}{comment.id}%0A%0A Here's why : )* """
-
-                reply = comment.mod.send_removal_message(
-                    message=removal_message, type='public_as_subreddit')
-
-                reply.mod.lock()
+            # if comment.parent_id == comment.link_id:
+            #     subject_body = f"""Rule breaking comment removed by AI """
+            #     comment.mod.remove()
+            #     removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
+            #     reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')}&subject=Incorrectly removed the comment&message=Comment Link: {comment.link_permalink}{comment.id}%0A%0A Here's why : )* """
+            #
+            #     reply = comment.mod.send_removal_message(
+            #         message=removal_message, type='public_as_subreddit')
+            #
+            #     reply.mod.lock()
             mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
             comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {reason[1]}"""
             mod_mail.create(
