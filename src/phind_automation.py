@@ -82,7 +82,7 @@ def phind_detection(comment,mod_mail,parent_comment):
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
-            subject_body = f"""Rule breaking comment Detected by AI """
+            # subject_body = f"""Rule breaking comment Detected by AI """
             # if comment.parent_id == comment.link_id:
             #     subject_body = f"""Rule breaking comment removed by AI """
             #     comment.mod.remove()
@@ -93,13 +93,14 @@ def phind_detection(comment,mod_mail,parent_comment):
             #         message=removal_message, type='public_as_subreddit')
             #
             #     reply.mod.lock()
-            mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
-            comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {reason[1]}"""
-            mod_mail.create(
-                subject=subject_body,
-                body=mod_mail_body,
-                recipient=f"""u/{os.environ.get("MODERATOR1")}""")
-            comment.save()
+            # mod_mail_body = f"""Author: [{comment.author}](https://www.reddit.com/r/{os.environ.get("SUBREDDIT")}/search/?q=author%3A{comment.author}&restrict_sr=1&type=comment&sort=new)\n\ncomment: {
+            # comment.body}\n\nComment Link : {comment.link_permalink}{comment.id}/?context=3 \n\nBots reason for removal: {reason[1]}"""
+            # mod_mail.create(
+            #     subject=subject_body,
+            #     body=mod_mail_body,
+            #     recipient=f"""u/{os.environ.get("MODERATOR1")}""")
+            # comment.save()
+            comment.report(reason)
         elif answer.startswith('False'): 
             print('Comment Does not violate the rules')
             comment.save()
