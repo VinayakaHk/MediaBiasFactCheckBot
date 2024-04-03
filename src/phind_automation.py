@@ -78,7 +78,7 @@ def phind_detection(comment,mod_mail,parent_comment):
         print('answer : ', answer)
         driver.quit()
         display.stop()
-        store_phind_in_comments(answer, comment.link_id)
+        store_phind_in_comments(answer, comment.id)
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
