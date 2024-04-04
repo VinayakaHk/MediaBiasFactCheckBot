@@ -1,17 +1,20 @@
 import traceback
 import re
 import time
-import os
-MAX_RETRIES = 3  # Maximum number of retry attempts
-RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
+import urllib.parse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
 from pyvirtualdisplay import Display
 
+MAX_RETRIES = 3  # Maximum number of retry attempts
+RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
+
+
 from .mongodb import store_phind_in_comments
+
+
 def retry_on_failure(func, *args, **kwargs):
     retries = 0
     while retries < MAX_RETRIES:
@@ -28,60 +31,70 @@ def retry_on_failure(func, *args, **kwargs):
 def extract_text_from_element(element):
     return element.text.strip()
 
-def phind_detection(comment,mod_mail,parent_comment):
+
+def phind_detection(comment, mod_mail, parent_comment):
     try:
+        time1 = time.time()
         display = Display(visible=0, size=(800, 600))
         display.start()
         driver = webdriver.Chrome()
-
-        driver.get("https://www.phind.com/")
-        time.sleep(2)  # Asynchronous sleep
-        textbox = driver.find_element(By.CSS_SELECTOR, '.searchbox-textarea')
-        textbox.send_keys(
-            f"For context , {comment.link_title} is the title and {comment.link_url} is the article. The person is repling to ```{parent_comment}``` . Dont judge this comment as its just for context. Now, You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
-            Keys.ENTER)
-
-        time.sleep(2)  # Asynchronous sleep
-        initial_elements = WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.XPATH, '//div[@class="fs-5"]'))
-        )
+        query = f"For context , {comment.link_title} is the title and {comment.link_url} is the article. The person is repling to ```{parent_comment}``` . Dont judge this comment as its just for context. Now, You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it within 100 characters"
+        encoded_url = urllib.parse.quote(query)
+        driver.get(f"https://www.phind.com/search?q={encoded_url}&ignoreSearchResults=false&allowMultiSearch=false")
+        time.sleep(5)
+        # textbox = driver.find_element(By.CSS_SELECTOR, '.searchbox-textarea')
+        # textbox.send_keys(
+        #     f"For context , {comment.link_title} is the title and {comment.link_url} is the article. The person is repling to ```{parent_comment}``` . Dont judge this comment as its just for context. Now, You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it",
+        #     Keys.ENTER)
+        # initial_elements = WebDriverWait(driver, 30).until(
+        #     EC.presence_of_all_elements_located((By.XPATH, '//div[@class="fs-5"]'))
+        # )
 
         # Keep track of the length of the parent elements containing the dynamic elements
-        prev_length = len(driver.find_elements(By.XPATH, '//div[@class="fs-5"]'))
+        # prev_length = len(driver.find_elements(By.XPATH, '//div[@class="fs-5"]'))
 
         # Wait and continuously check if new dynamic elements are added
-        start_time = time.time()
-        while True:
-            time.sleep(5)  # Asynchronous sleep  # Wait for 5 seconds before checking again
-
-            # Check the current length of the parent elements
-            current_length = len(driver.find_elements(By.XPATH, '//div[@class="fs-5"]'))
-
-            # If the length remains the same after waiting, assume all elements are loaded
-            if current_length == prev_length:
-                break
-
-            # If the total wait time exceeds 60 seconds, exit the loop to prevent infinite waiting
-            if time.time() - start_time > 60:
-                print("Timeout occurred while waiting for all elements to load")
-                break
-
-            # Update the previous length for the next iteration
-            prev_length = current_length
+        # start_time = time.time()
+        # while True:
+        #     time.sleep(3)  # Asynchronous sleep  # Wait for 5 seconds before checking again
+        #
+        #     # Check the current length of the parent elements
+        #     current_length = len(driver.find_elements(By.XPATH, '//div[@class="fs-5"]'))
+        #
+        #     # If the length remains the same after waiting, assume all elements are loaded
+        #     if current_length == prev_length:
+        #         break
+        #
+        #     # If the total wait time exceeds 60 seconds, exit the loop to prevent infinite waiting
+        #     if time.time() - start_time > 60:
+        #         print("Timeout occurred while waiting for all elements to load")
+        #         break
+        #
+        #     # Update the previous length for the next iteration
+        #     prev_length = current_length
 
         # Once all elements are loaded, extract text from each dynamic element
-        dynamic_elements = driver.find_elements(By.XPATH, '//div[@class="fs-5"]')
+        dynamic_elements = WebDriverWait(driver, 30).until(
+            EC.presence_of_all_elements_located((By.XPATH, '//div[@class="fs-5"]'))
+        )
+        # dynamic_elements = driver.find_elements(By.XPATH, '//div[@class="fs-5"]')
         answer = ''
         for elem in dynamic_elements:
             text = extract_text_from_element(elem)
             answer += text
         print('answer : ', answer)
+
         driver.quit()
         display.stop()
         store_phind_in_comments(answer, comment.id)
+        time2 = time.time()
+        seconds = time2 - time1
+        print("Finished in ", seconds, " seconds ")
         # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
+            if len(reason) > 100:
+                reason = reason[:100]
             # subject_body = f"""Rule breaking comment Detected by AI """
             # if comment.parent_id == comment.link_id:
             #     subject_body = f"""Rule breaking comment removed by AI """
@@ -99,15 +112,16 @@ def phind_detection(comment,mod_mail,parent_comment):
             #     subject=subject_body,
             #     body=mod_mail_body,
             #     recipient=f"""u/{os.environ.get("MODERATOR1")}""")
-            # comment.save()
+            comment.save()
             comment.report(reason)
-        elif answer.startswith('False'): 
+        elif answer.startswith('False'):
             print('Comment Does not violate the rules')
             comment.save()
-        else : 
+        else:
             print('API error')
 
     except Exception as e:
+
         tb = traceback.format_exc()
         print(tb)
         # Find the line number where the exception occurred
@@ -121,5 +135,3 @@ def phind_detection(comment,mod_mail,parent_comment):
             print("Unable to extract line number from traceback.")
 
         print(f"An error occurred: {e}")
-    finally:
-        driver.quit()

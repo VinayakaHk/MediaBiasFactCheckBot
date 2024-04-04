@@ -2,6 +2,7 @@
 # from pymongo import MongoClient
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor
+import threading
 from threading import Thread
 import time
 import sys
@@ -16,6 +17,8 @@ from src.phind_automation import phind_detection
 load_dotenv()
 
 connect_to_mongo()
+
+stop_threads = threading.Event()
 
 whitelisted_authors_from_Gemini = list(
     os.environ.get("WHITELIST_GEMINI").split(" "))
@@ -57,8 +60,8 @@ def print_mbfc_text(domain, obj):
     if credibility != "no credibility rating available":
         text += f"|Credibility Rating|{obj['credibility']}|\n"
 
-    text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {
-    obj['name']}'s review [here]({obj['profile']}).
+    text += f"""\nThis rating was provided by Media Bias Fact Check. For more information, see {obj['name']}'s review 
+[here]({obj['profile']}).
 ***"""
     return text
 
@@ -125,8 +128,7 @@ def send_to_modqueue(submission):
             message=f"""Your submission has been filtered until you comment a Submission Statement.
 Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement
 to get your post approved. Make sure its about 1-2 paragraphs long.
-\n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{
-            os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
+\n\nIf you need assistance with writing a submission Statement, please refer https://reddit.com/r/{os.environ.get('SUBREDDIT')}/wiki/submissionstatement/ ."""
         )
         message.mod.lock()
         return message
@@ -290,29 +292,39 @@ def phind_comment(comment):
 def monitor_submission():
     while True:
         try:
-            print('monitor_submission:')
+            while not stop_threads.is_set():
+                print('monitor_submission:')
+                #skip_existing=True
+                for submission in subreddit.stream.submissions():
+                    try:
+                        if (submission != None):
+                            print("Submission : ", submission, "Approved : ", submission.approved,
+                                  submission.removed_by)
+                            store_submission_in_mongo(submission)
+                            if (submission.author == 'AutoModerator'):
+                                submission.mod.approve()
+                            elif submission != None and submission.approved == False and submission.removed == False:
+                                if not submission.is_self:
 
-            for submission in subreddit.stream.submissions(skip_existing=True):
-                if (submission != None):
-                    print("Submission : ", submission, "Approved : ", submission.approved,
-                          submission.removed_by)
-                    store_submission_in_mongo(submission)
-                    if (submission.author == 'AutoModerator'):
-                        submission.mod.approve()
-                    elif submission != None and submission.approved == False and submission.removed == False:
-                        if not submission.is_self:
+                                    print("Submission URL filtered: ", submission)
 
-                            print("Submission URL filtered: ", submission)
+                                    message = send_to_modqueue(submission)
+                                else:
+                                    if len(submission.selftext) > 200:
+                                        approve_submission(submission, None, True)
 
-                            message = send_to_modqueue(submission)
-                        else:
-                            if len(submission.selftext) > 200:
-                                approve_submission(submission, None, True)
+                                    else:
+                                        print("Self Text filtered : ", submission)
+                                        message = send_to_modqueue(submission)
+                        time.sleep(2)
+                    except Exception as e:
+                        print_exception()
+                        time.sleep(60)
+                pass
 
-                            else:
-                                print("Self Text filtered : ", submission)
-                                message = send_to_modqueue(submission)
-                time.sleep(2)
+
+        except KeyboardInterrupt:
+            print("monitor_submission interrupted.")
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
             time.sleep(60)
@@ -324,30 +336,37 @@ def monitor_submission():
 def monitor_comments():
     while True:
         try:
-            print('monitor_comments:')
-            for comment in subreddit.stream.comments(skip_existing=True):
-                try:
-                    if comment is not None:
-                        print("comment: ", comment,
-                              "author : ", comment.author)
-                        store_comment_in_mongo(comment)
+            while not stop_threads.is_set():
+                print('monitor_comments:')
+                #skip_existing=True
+                for comment in subreddit.stream.comments():
+                    try:
+                        if comment is not None:
+                            print("comment: ", comment,
+                                  "author : ", comment.author)
+                            store_comment_in_mongo(comment)
 
-                        if comment.author == "empleadoEstatalBot":
-                            comment.mod.approve()
-                        if comment.is_submitter and comment.parent_id == comment.link_id and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
-                        ):
-                            if has_submission_statement(comment):
-                                print('Submission ', comment.submission,
-                                      'approved. SS Comment : ', comment)
-                                approve_submission(
-                                    comment.submission, comment, bool(comment.submission.is_self))
-                        elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (
-                                comment.author not in whitelisted_authors_from_Gemini):
-                            phind_comment(comment)
-                    time.sleep(2)
-                except Exception as e:
-                    print_exception()
-                    time.sleep(60)
+                            if comment.author == "empleadoEstatalBot":
+                                comment.mod.approve()
+                            if comment.is_submitter and comment.parent_id == comment.link_id and comment.submission.approved == False and comment.submission.removed_by == reddit.user.me(
+                            ):
+                                if has_submission_statement(comment):
+                                    print('Submission ', comment.submission,
+                                          'approved. SS Comment : ', comment)
+                                    approve_submission(
+                                        comment.submission, comment, bool(comment.submission.is_self))
+                            elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (
+                                    comment.author not in whitelisted_authors_from_Gemini):
+                                phind_comment(comment)
+                        time.sleep(2)
+                    except Exception as e:
+                        print_exception()
+                        time.sleep(60)
+                pass
+
+
+        except KeyboardInterrupt:
+            print("monitor_submission interrupted.")
         except praw.exceptions.RedditAPIException as e:
             print(f"API Exception: {e}")
             time.sleep(60)
@@ -369,6 +388,10 @@ def main():
             future_comments.exception()}""")
     except KeyboardInterrupt:
         print('Monitoring stopped.')
+        stop_threads.set()
+        # Wait for the threads to finish
+        future_submission.result()
+        future_comments.result()
         exit()
     except Exception as e:
         print("Error ", e)
