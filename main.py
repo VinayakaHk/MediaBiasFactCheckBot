@@ -98,10 +98,10 @@ def has_submission_statement(comment):
                 comment.mod.remove()
                 comment.mod.lock()
                 reply = comment.reply(
-                    'Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a '
-                    'new comment. Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited '
-                    'comment'
-                )
+                    body='Your Submission Statement is not long enough, Please make a lengthier Submission Statement in a '
+                         'new comment. Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited '
+                         'comment'
+                    )
                 reply.mod.distinguish()
                 reply.mod.lock()
 
@@ -111,9 +111,9 @@ def has_submission_statement(comment):
             comment.mod.remove()
             comment.mod.lock()
             reply = comment.reply(
-                'Your Submission Statement should start with the term "SS" or "Submission Statement" (without the " '
-                '").  Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment.'
-            )
+                body='Your Submission Statement should start with the term "SS" or "Submission Statement" (without the " '
+                     '").  Please DO NOT edit your comment and make a new one. Bots cannot re-read your edited comment.'
+                )
             reply.mod.distinguish()
             reply.mod.lock()
             return False
@@ -204,13 +204,13 @@ def approve_submission_old(submission, comment=None, is_self=True):
                 domain = [domain]
                 url = [url]
                 reply_text = get_reply_text(domain, url, comment)
-                reply = submission.reply(reply_text)
+                reply = submission.reply(body=reply_text)
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
             else:
                 reply_text = get_reply_text(domains, urls, comment)
 
-                reply = submission.reply(reply_text)
+                reply = submission.reply(body=reply_text)
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
     except praw.exceptions.RedditAPIException as e:
@@ -255,7 +255,7 @@ def approve_submission(submission, comment=None, is_self=True):
                 domain = [domain]
                 url = [url]
                 reply_text = get_reply_text(domain, url, comment)
-                reply = submission.reply(reply_text)
+                reply = submission.reply(body=reply_text)
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
             else:
@@ -294,7 +294,7 @@ def monitor_submission():
         try:
             while not stop_threads.is_set():
                 print('monitor_submission:')
-                #skip_existing=True
+                # skip_existing=True
                 for submission in subreddit.stream.submissions():
                     try:
                         if (submission != None):
@@ -338,7 +338,7 @@ def monitor_comments():
         try:
             while not stop_threads.is_set():
                 print('monitor_comments:')
-                #skip_existing=True
+                # skip_existing=True
                 for comment in subreddit.stream.comments():
                     try:
                         if comment is not None:
