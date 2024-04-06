@@ -42,7 +42,6 @@ def store_phind_in_comments(reason , comment_id):
         comment = comments_collection.update_one(
             {"comment_id": comment_id}, {"$set": {'ai_removal_reason' : reason} }
         )
-        print('comment',comment)
     except Exception as e:
         PrintException()
 

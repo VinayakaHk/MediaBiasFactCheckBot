@@ -34,7 +34,6 @@ def extract_text_from_element(element):
 
 def phind_detection(comment, mod_mail, parent_comment):
     try:
-        time1 = time.time()
         display = Display(visible=0, size=(800, 600))
         display.start()
         driver = webdriver.Chrome()
@@ -82,15 +81,10 @@ def phind_detection(comment, mod_mail, parent_comment):
         for elem in dynamic_elements:
             text = extract_text_from_element(elem)
             answer += text
-        print('answer : ', answer)
 
         driver.quit()
         display.stop()
         store_phind_in_comments(answer, comment.id)
-        time2 = time.time()
-        seconds = time2 - time1
-        print("Finished in ", seconds, " seconds ")
-        # return answer
         if answer.startswith('True.'):
             reason = answer.split('True.')
             if len(reason) > 100:
@@ -115,7 +109,6 @@ def phind_detection(comment, mod_mail, parent_comment):
             comment.save()
             comment.report(reason)
         elif answer.startswith('False'):
-            print('Comment Does not violate the rules')
             comment.save()
         else:
             print('API error')
