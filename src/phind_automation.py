@@ -16,6 +16,20 @@ from .mongodb import store_phind_in_comments
 
 
 def retry_on_failure(func, *args, **kwargs):
+    """
+    Retries a given function until it succeeds or reaches the maximum number of retries.
+    
+    Parameters:
+    - func: The function to be retried.
+    - args: Positional arguments to be passed to the function.
+    - kwargs: Keyword arguments to be passed to the function.
+    
+    Returns:
+    - The result of the function if successful.
+    
+    Raises:
+    - The exception if the function fails after the maximum number of retries.
+    """
     retries = 0
     while retries < MAX_RETRIES:
         try:
@@ -33,10 +47,16 @@ def extract_text_from_element(element):
 
 
 def phind_detection(comment, mod_mail, parent_comment):
+    """
+    A function that performs Phind detection using the provided comment, mod_mail, and parent_comment.
+    It checks for rule violations in the comment and takes appropriate actions based on the result.
+    """
     try:
         display = Display(visible=0, size=(800, 600))
         display.start()
-        driver = webdriver.Chrome()
+        chromeOptions = webdriver.ChromeOptions() 
+        chromeOptions.add_argument("--remote-debugging-port=9222")  # this is for devtools listening
+        driver = webdriver.Chrome(chrome_options=chromeOptions)
         query = f"For context , {comment.link_title} is the title and {comment.link_url} is the article. The person is repling to ```{parent_comment}``` . Dont judge this comment as its just for context. Now, You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a reason for it within 100 characters"
         encoded_url = urllib.parse.quote(query)
         driver.get(f"https://www.phind.com/search?q={encoded_url}&ignoreSearchResults=false&allowMultiSearch=false")

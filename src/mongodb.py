@@ -33,6 +33,16 @@ def PrintException():
 
 
 def store_phind_in_comments(reason , comment_id):
+    """
+    A function that stores a phind in the comments based on the given reason and comment_id.
+    
+    Parameters:
+    - reason: The reason for storing the phind in the comments.
+    - comment_id: The ID of the comment to store the phind in.
+    
+    Returns:
+    None
+    """
     print('reason',reason)
     print('comment_id',comment_id)
     try:
@@ -47,6 +57,15 @@ def store_phind_in_comments(reason , comment_id):
 
 
 def comment_body(comment_id):
+    """
+    Retrieves the parent comment body based on the given comment_id.
+
+    Args:
+        comment_id (int): The unique identifier for the comment.
+
+    Returns:
+        str: The body of the parent comment, or None if not found.
+    """
     try:
         global db
         comments_collection = db['comments']
@@ -72,6 +91,15 @@ def comment_body(comment_id):
 
 
 def store_submission_in_mongo(submission):
+    """
+    A function that stores a submission in a MongoDB collection.
+    
+    Parameters:
+    submission: object - the submission object to be stored
+    
+    Returns:
+    None
+    """
     try:
         global db
 
@@ -107,6 +135,15 @@ def store_submission_in_mongo(submission):
 
 
 def store_comment_in_mongo(comment):
+    """
+    A function to store a comment in a MongoDB collection.
+    
+    Parameters:
+    comment (obj): The comment object to be stored in the collection.
+    
+    Returns:
+    None
+    """
     try:
         global db
         comments_collection = db['comments']
@@ -143,6 +180,9 @@ def store_comment_in_mongo(comment):
 
 
 def create_indexes():
+    """
+    A function to create indexes for the 'comments' and 'submissions' collections in the database.
+    """
     try:
         global db
 
@@ -163,6 +203,18 @@ def create_indexes():
 
 
 def connect_to_mongo():
+    """
+    A function to establish a connection to a MongoDB database with retries in case of failure.
+    This function does the following:
+    - Attempts to connect to the MongoDB server using the provided environment variable.
+    - Sends a ping to confirm the connection's success.
+    - If the connection is successful, it prints a success message, creates necessary indexes, and returns the database connection.
+    - If the connection fails, it retries a specified number of times with a delay between each attempt.
+    - If all attempts fail, it prints a failure message and exits the program.
+    
+    Returns:
+    - db (pymongo.database.Database): The connected MongoDB database.
+    """
     global db
     retries = 0
     while retries < MAX_RETRIES:
