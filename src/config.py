@@ -14,7 +14,7 @@ PASSWORD = os.environ.get("PASSWORD")
 SUBREDDIT = os.environ.get('SUBREDDIT')
 
 # Whitelisted authors
-WHITELIST_GEMINI = list(os.environ.get("WHITELIST_GEMINI", "").split(" "))
+WHITELIST_LLM = list(os.environ.get("WHITELIST_LLM", "").split(" "))
 
 # Submission statement requirements
 MIN_SUBMISSION_STATEMENT_LENGTH = 150

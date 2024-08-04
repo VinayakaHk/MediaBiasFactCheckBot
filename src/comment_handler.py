@@ -2,7 +2,7 @@ import time
 import threading
 from typing import Optional
 import praw
-from src.config import WHITELIST_GEMINI, SUBMISSION_STATEMENT_TOO_SHORT, SUBMISSION_STATEMENT_FORMAT_INCORRECT, MIN_SUBMISSION_STATEMENT_LENGTH,REDDIT_USERNAME
+from src.config import WHITELIST_LLM, SUBMISSION_STATEMENT_TOO_SHORT, SUBMISSION_STATEMENT_FORMAT_INCORRECT, MIN_SUBMISSION_STATEMENT_LENGTH,REDDIT_USERNAME
 from src.mongodb import store_comment_in_mongo, comment_body
 from src.llm_automation import llm_detection
 from src.reddit_utils import approve_submission
@@ -66,7 +66,7 @@ def handle_comment(comment: praw.models.Comment, subreddit: praw.models.Subreddi
             if has_submission_statement(comment):
                 print(f'Submission {comment.submission} approved. SS Comment: {comment}')
                 approve_submission(comment.submission, comment, comment.submission.is_self)
-        elif not comment.removed and not comment.approved and not comment.spam and not comment.saved and comment.banned_by is None and comment.author not in WHITELIST_GEMINI:
+        elif not comment.removed and not comment.approved and not comment.spam and not comment.saved and comment.banned_by is None and comment.author not in WHITELIST_LLM:
             llm_comment(comment, subreddit.modmail)
     except Exception as e:
         print_exception()

@@ -20,8 +20,8 @@ connect_to_mongo()
 
 stop_threads = threading.Event()
 
-whitelisted_authors_from_Gemini = list(
-    os.environ.get("WHITELIST_GEMINI").split(" "))
+whitelisted_authors_from_llm = list(
+    os.environ.get("WHITELIST_LLM").split(" "))
 
 # Initialize PRAW with your credentials
 reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
@@ -355,7 +355,7 @@ def monitor_comments():
                                     approve_submission(
                                         comment.submission, comment, bool(comment.submission.is_self))
                             elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (
-                                    comment.author not in whitelisted_authors_from_Gemini):
+                                    comment.author not in whitelisted_authors_from_llm):
                                 llm_comment(comment)
                         time.sleep(2)
                     except Exception as e:

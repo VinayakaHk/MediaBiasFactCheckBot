@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-genai.configure(api_key=os.environ.get("GEMINI"))
+genai.configure(api_key=os.environ.get("llm"))
 
 # Set up the model
 generation_config = {
@@ -40,7 +40,7 @@ safety_settings = [
     },
 ]
 
-model = genai.GenerativeModel(model_name="gemini-pro",
+model = genai.GenerativeModel(model_name="llm-pro",
                               generation_config=generation_config,
                               safety_settings=safety_settings)
 
@@ -62,7 +62,7 @@ def convert_quotes(obj):
     return obj
 
 
-def gemini_detection(input_string, parent_comment, link_title):
+def llm_detection(input_string, parent_comment, link_title):
     if (parent_comment == None):
         parent_comment = link_title
     try:
@@ -120,7 +120,7 @@ make sure <your reply> is detailed and sophisticated. do not write anything befo
                         try:
                             json_obj = json.loads(json_str2)
                         except:
-                            print('gemini response: ', json_str2)
+                            print('llm response: ', json_str2)
                             return ({"answer": "0", "reason": "API ERROR"})
                     return json_obj
                 else:
@@ -128,11 +128,11 @@ make sure <your reply> is detailed and sophisticated. do not write anything befo
             if (response.text):
                 try:
                     response = json.loads(response.text)
-                    response_val = int(gemini_result['answer'])
+                    response_val = int(llm_result['answer'])
                     print('response_val = ', response_val)
                     return response
                 except:
-                    print("gemini response : ", response.text)
+                    print("llm response : ", response.text)
                     return ({"answer": "0", "reason": "API ERROR"})
             else:
                 return ({"answer": "0", "reason": "API ERROR"})

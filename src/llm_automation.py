@@ -2,6 +2,7 @@ import traceback
 import re
 import time
 import os
+import praw
 import urllib.parse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -16,7 +17,7 @@ MAX_RETRIES = 3  # Maximum number of retry attempts
 RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
 
 
-# from .mongodb import store_llm_in_comments
+from .mongodb import store_llm_in_comments
 
 
 def retry_on_failure(func, *args, **kwargs):
@@ -51,18 +52,22 @@ def extract_text_from_element(element):
 
 
 
-def llm_detection (comment, mod_mail, parent_comment):
+def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.ModmailConversation, parent_comment : praw.models.Comment):
     """
     A function that performs llm detection using the provided comment, mod_mail, and parent_comment.
     It checks for rule violations in the comment and takes appropriate actions based on the result.
     """
     try:
+        print('comment', comment)
+        print('mod_mail', mod_mail)
+        print('parent_comment',parent_comment)
+        print
         display = Display(visible=0,size=(800, 600))
         display.start()
         # chromeOptions = webdriver.ChromeOptions() 
         # chromeOptions.add_argument("--remote-debugging-port=9222")
         driver = webdriver.Chrome()
-        query = f"for context, `{parent_comment.body}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a short reason in 80 characters"
+        query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a short reason in 80 characters"
         encoded_url = urllib.parse.quote(query)
         driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
         time.sleep(5)
@@ -77,7 +82,7 @@ def llm_detection (comment, mod_mail, parent_comment):
 
         driver.quit()
         display.stop()
-        # store_llm_in_comments(answer, comment.id)
+        store_llm_in_comments(answer, comment.id)
         if answer.startswith('True.'):
             reason = answer.split('True.')
             if len(reason) > 100:
@@ -104,7 +109,7 @@ def llm_detection (comment, mod_mail, parent_comment):
         elif answer.startswith('False'):
             comment.save()
         else:
-            print('API error')
+            print('API error', answer)
 
     except Exception as e:
         print_exception()
