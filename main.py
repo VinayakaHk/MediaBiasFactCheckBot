@@ -34,7 +34,6 @@ reddit = praw.Reddit(client_id=os.environ.get("CLIENT_ID"),
 # Define the subreddit you want to monitor
 subreddit_name = os.environ.get('SUBREDDIT')
 subreddit = reddit.subreddit(subreddit_name)
-print('subreddit ', subreddit)
 mod_mail = subreddit.modmail
 
 

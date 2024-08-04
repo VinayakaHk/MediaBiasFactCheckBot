@@ -47,9 +47,6 @@ def store_phind_in_comments(reason , comment_id):
     print('comment_id',comment_id)
     try:
         global db
-        if db == None:
-            connect_to_mongo()
-
         comments_collection = db['comments']
 
         comment = comments_collection.update_one(
@@ -71,8 +68,6 @@ def comment_body(comment_id):
     """
     try:
         global db
-        if db == None:
-            connect_to_mongo()
         comments_collection = db['comments']
         comment = comments_collection.find_one({'comment_id': comment_id})
         if (comment == None or (comment['link_id'] == comment['parent_id'])):
@@ -107,8 +102,7 @@ def store_submission_in_mongo(submission):
     """
     try:
         global db
-        if db == None:
-            connect_to_mongo()
+
         submissions_collection = db['submissions']
         if_submission = submissions_collection.find_one(
             {'submission_id': submission.id})
@@ -152,8 +146,6 @@ def store_comment_in_mongo(comment):
     """
     try:
         global db
-        if db == None:
-            connect_to_mongo()
         comments_collection = db['comments']
         if_comment = comments_collection.find_one({'comment_id': comment.id})
         if (if_comment == None):
@@ -193,8 +185,6 @@ def create_indexes():
     """
     try:
         global db
-        if db == None:
-            connect_to_mongo()
 
         # Create compound index for 'comments' collection
         comment_index_model = IndexModel(
