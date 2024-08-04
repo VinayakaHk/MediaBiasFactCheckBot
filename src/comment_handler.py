@@ -4,7 +4,7 @@ from typing import Optional
 import praw
 from src.config import WHITELIST_GEMINI, SUBMISSION_STATEMENT_TOO_SHORT, SUBMISSION_STATEMENT_FORMAT_INCORRECT, MIN_SUBMISSION_STATEMENT_LENGTH,REDDIT_USERNAME
 from src.mongodb import store_comment_in_mongo, comment_body
-from src.phind_automation import phind_detection
+from src.llm_automation import llm_detection
 from src.reddit_utils import approve_submission
 from src.exceptions import print_exception
 
@@ -67,7 +67,7 @@ def handle_comment(comment: praw.models.Comment, subreddit: praw.models.Subreddi
                 print(f'Submission {comment.submission} approved. SS Comment: {comment}')
                 approve_submission(comment.submission, comment, comment.submission.is_self)
         elif not comment.removed and not comment.approved and not comment.spam and not comment.saved and comment.banned_by is None and comment.author not in WHITELIST_GEMINI:
-            phind_comment(comment, subreddit.modmail)
+            llm_comment(comment, subreddit.modmail)
     except Exception as e:
         print_exception()
 
@@ -98,9 +98,9 @@ def has_submission_statement(comment: praw.models.Comment) -> bool:
         print_exception()
 
 
-def phind_comment(comment: praw.models.Comment, mod_mail: praw.models.ModmailConversation):
+def llm_comment(comment: praw.models.Comment, mod_mail: praw.models.ModmailConversation):
     """
-    Process a comment using Phind detection.
+    Process a comment using llm detection.
 
     Args:
         comment (praw.models.Comment): The comment to process
@@ -108,7 +108,7 @@ def phind_comment(comment: praw.models.Comment, mod_mail: praw.models.ModmailCon
     """
     try:
         parent_comment = comment_body(comment.id)
-        threading.Thread(target=phind_detection, args=(comment, mod_mail, parent_comment)).start()
+        threading.Thread(target=llm_detection, args=(comment, mod_mail, parent_comment)).start()
     except Exception as e:
         print_exception()
 

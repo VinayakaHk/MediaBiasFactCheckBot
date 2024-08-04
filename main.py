@@ -12,7 +12,7 @@ import re
 import os
 import praw
 from src.mongodb import connect_to_mongo, store_comment_in_mongo, store_submission_in_mongo, comment_body
-from src.phind_automation import phind_detection
+from src.llm_automation import llm_detection
 
 load_dotenv()
 
@@ -278,12 +278,12 @@ def approve_submission(submission, comment=None, is_self=True):
         time.sleep(60)
 
 
-def phind_comment(comment):
+def llm_comment(comment):
     try:
         global mod_mail
         parent_comment = comment_body(comment.id)
-        Thread(target=phind_detection, args=(comment, mod_mail, parent_comment,)).start()
-        # phind_detection(comment, mod_mail,parent_comment)
+        Thread(target=llm_detection, args=(comment, mod_mail, parent_comment,)).start()
+        # llm_detection(comment, mod_mail,parent_comment)
     except Exception as e:
         print_exception()
 
@@ -356,7 +356,7 @@ def monitor_comments():
                                         comment.submission, comment, bool(comment.submission.is_self))
                             elif comment.removed == False and comment.approved == False and comment.spam == False and comment.saved == False and comment.banned_by == None and (
                                     comment.author not in whitelisted_authors_from_Gemini):
-                                phind_comment(comment)
+                                llm_comment(comment)
                         time.sleep(2)
                     except Exception as e:
                         print_exception()

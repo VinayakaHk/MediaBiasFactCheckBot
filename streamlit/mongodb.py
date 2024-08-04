@@ -32,13 +32,13 @@ def PrintException():
                                                        line.strip(), exc_obj))
 
 
-def store_phind_in_comments(reason , comment_id):
+def store_llm_in_comments(reason , comment_id):
     """
-    A function that stores a phind in the comments based on the given reason and comment_id.
+    A function that stores a llm in the comments based on the given reason and comment_id.
     
     Parameters:
-    - reason: The reason for storing the phind in the comments.
-    - comment_id: The ID of the comment to store the phind in.
+    - reason: The reason for storing the llm in the comments.
+    - comment_id: The ID of the comment to store the llm in.
     
     Returns:
     None
