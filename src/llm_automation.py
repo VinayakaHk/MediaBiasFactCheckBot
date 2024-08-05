@@ -58,10 +58,6 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
     It checks for rule violations in the comment and takes appropriate actions based on the result.
     """
     try:
-        print('comment', comment)
-        print('mod_mail', mod_mail)
-        print('parent_comment',parent_comment)
-        print
         display = Display(visible=0,size=(800, 600))
         display.start()
         # chromeOptions = webdriver.ChromeOptions() 
@@ -78,7 +74,6 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
         for elem in dynamic_elements:
             text = extract_text_from_element(elem)
             answer += text
-        print('answer', answer)
 
         driver.quit()
         display.stop()
