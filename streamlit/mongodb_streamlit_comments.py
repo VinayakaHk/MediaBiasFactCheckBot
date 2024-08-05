@@ -6,8 +6,8 @@ from collections import Counter
 from textblob import TextBlob
 
 # Connect to MongoDB
-client = MongoClient('mongodb://username:password@localhost:27017/')
-db = client['your_database']
+client = MongoClient('mongodb://localhost:27017/')
+db = client['reddit']
 
 # Retrieve comments data from MongoDB
 comments_collection = db['comments']
@@ -15,7 +15,8 @@ comments_data = list(comments_collection.find())
 comments_df = pd.DataFrame(comments_data)
 
 # Convert created_utc column to datetime
-comments_df['created_utc'] = pd.to_datetime(comments_df['created_utc'])
+
+comments_df['created_utc'] = pd.to_datetime(comments_df['created_utc'], unit='s')
 
 # Comment Analytics Dashboard
 st.title('Comment Analytics Dashboard')
