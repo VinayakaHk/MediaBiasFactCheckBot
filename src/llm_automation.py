@@ -4,6 +4,7 @@ import time
 import os
 import praw
 import urllib.parse
+import platform
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -58,12 +59,13 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
     It checks for rule violations in the comment and takes appropriate actions based on the result.
     """
     try:
-        display = Display(visible=0,size=(800, 600))
-        display.start()
+        if platform.machine() == "aarch64" and platform.system() == "Linux":
+            display = Display(visible=0,size=(800, 600))
+            display.start()
         # chromeOptions = webdriver.ChromeOptions() 
         # chromeOptions.add_argument("--remote-debugging-port=9222")
         driver = webdriver.Chrome()
-        query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True if it violates the rules  or False if it doesnt violate the rules. Give a short reason in 80 characters"
+        query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True. if it violates the rules  or False. if it doesnt violate the rules. Give a short reason in 80 characters"
         encoded_url = urllib.parse.quote(query)
         driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
         time.sleep(5)
@@ -76,7 +78,8 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
             answer += text
 
         driver.quit()
-        display.stop()
+        if platform.machine() == "aarch64" and platform.system() == "Linux":
+            display.stop()
         store_llm_in_comments(answer, comment.id)
         if answer.startswith('True.'):
             reason = answer.split('True.')
