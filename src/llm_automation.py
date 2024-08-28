@@ -29,6 +29,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
     It checks for rule violations in the comment and takes appropriate actions based on the result.
     """
     try:
+        dynamic_elements = []
         for i in range(MAX_RETRIES):
             try:
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
