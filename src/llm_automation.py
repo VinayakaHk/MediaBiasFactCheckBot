@@ -72,11 +72,12 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
     #     store_llm_in_comments(answer, comment.id)
     answer = ''
     driver = None
+    display = Display(visible=0, size=(800, 600))
+
     try:
         for i in range(MAX_RETRIES):
             try:
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
-                    display = Display(visible=0, size=(800, 600))
                     display.start()
 
                 driver = webdriver.Chrome()
