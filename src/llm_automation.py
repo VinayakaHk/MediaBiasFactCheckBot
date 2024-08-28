@@ -21,37 +21,6 @@ RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
 from .mongodb import store_llm_in_comments
 
 
-def retry_on_failure(func, *args, **kwargs):
-    """
-    Retries a given function until it succeeds or reaches the maximum number of retries.
-    
-    Parameters:
-    - func: The function to be retried.
-    - args: Positional arguments to be passed to the function.
-    - kwargs: Keyword arguments to be passed to the function.
-    
-    Returns:
-    - The result of the function if successful.
-    
-    Raises:
-    - The exception if the function fails after the maximum number of retries.
-    """
-    retries = 0
-    while retries < MAX_RETRIES:
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            retries += 1
-            if retries == MAX_RETRIES:
-                raise e
-            print(f"Error occurred: {e}. Retrying in {RETRY_DELAY} seconds...")
-            time.sleep(RETRY_DELAY)
-
-
-def extract_text_from_element(element):
-    return element.text.strip()
-
-
 
 def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.ModmailConversation, parent_comment : praw.models.Comment):
     """
@@ -59,27 +28,41 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
     It checks for rule violations in the comment and takes appropriate actions based on the result.
     """
     try:
-        if platform.machine() == "aarch64" and platform.system() == "Linux":
-            display = Display(visible=0,size=(800, 600))
-            display.start()
-        # chromeOptions = webdriver.ChromeOptions() 
-        # chromeOptions.add_argument("--remote-debugging-port=9222")
-        driver = webdriver.Chrome()
-        query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True. if it violates the rules  or False. if it doesnt violate the rules. Give a short reason in 80 characters"
-        encoded_url = urllib.parse.quote(query)
-        driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
-        time.sleep(7)
-        dynamic_elements = WebDriverWait(driver, 30).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, '[data-testid="youchat-text"]'))
-        )
+        for i in range(MAX_RETRIES):
+            try:
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display = Display(visible=0,size=(800, 600))
+                    display.start()
+                # chromeOptions = webdriver.ChromeOptions() 
+                # chromeOptions.add_argument("--remote-debugging-port=9222")
+                driver = webdriver.Chrome()
+                query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True. if it violates the rules  or False. if it doesnt violate the rules. Give a short reason in 80 characters"
+                encoded_url = urllib.parse.quote(query)
+                driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
+                time.sleep(7)
+                print(driver.title)
+                dynamic_elements = WebDriverWait(driver, 30).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, '[data-testid="youchat-text"]'))
+                )
+            except Exception as e:
+                print_exception()
+                time.sleep(RETRY_DELAY)
+                driver.quit()
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display.stop()
+                continue
+            driver.quit()
+            if platform.machine() == "aarch64" and platform.system() == "Linux":
+                display.stop()
+            break
         answer = ''
         for elem in dynamic_elements:
             text = extract_text_from_element(elem)
             answer += text
 
-        driver.quit()
-        if platform.machine() == "aarch64" and platform.system() == "Linux":
-            display.stop()
+        # driver.quit()
+        # if platform.machine() == "aarch64" and platform.system() == "Linux":
+        #     display.stop()
         store_llm_in_comments(answer, comment.id)
         if answer.startswith('True.'):
             reason = answer.split('True.')
