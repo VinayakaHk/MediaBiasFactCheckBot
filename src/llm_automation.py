@@ -20,7 +20,8 @@ RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
 
 from .mongodb import store_llm_in_comments
 
-
+def element_strip(elem):
+    return elem.text.strip()
 
 def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.ModmailConversation, parent_comment : praw.models.Comment):
     """
@@ -39,8 +40,9 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
                 query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True. if it violates the rules  or False. if it doesnt violate the rules. Give a short reason in 80 characters"
                 encoded_url = urllib.parse.quote(query)
                 driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
+                time.sleep(7)
                 print(driver.title)
-                dynamic_elements = WebDriverWait(driver, 40).until(
+                dynamic_elements = WebDriverWait(driver, 30).until(
                     EC.presence_of_all_elements_located((By.CSS_SELECTOR, '[data-testid="youchat-text"]'))
                 )
             except Exception as e:
@@ -56,7 +58,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
             break
         answer = ''
         for elem in dynamic_elements:
-            text = elem.text.strip()
+            text = element_strip(elem)
             answer += text
 
         # driver.quit()
