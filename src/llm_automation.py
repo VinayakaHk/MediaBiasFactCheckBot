@@ -31,60 +31,83 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
     A function that performs llm detection using the provided comment, mod_mail, and parent_comment.
     It checks for rule violations in the comment and takes appropriate actions based on the result.
     """
+    # try:
+    #     dynamic_elements = []
+    #     driver =  None
+    #     for i in range(MAX_RETRIES):
+    #         try:
+    #             if platform.machine() == "aarch64" and platform.system() == "Linux":
+    #                 display = Display(visible=0,size=(800, 600))
+    #                 display.start()
+    #             # chromeOptions = webdriver.ChromeOptions() 
+    #             # chromeOptions.add_argument("--remote-debugging-port=9222")
+    #             driver = webdriver.Chrome()
+    #             query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse  under Rule 2.  Criticism is fair and allowed. Tell me if this comment starting and ending with ` violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True. if it violates the rules  or False. if it doesnt violate the rules. Give a short reason in 80 characters"
+    #             encoded_url = urllib.parse.quote(query)
+    #             driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
+    #             time.sleep(7)
+    #             print(driver.title)
+    #             dynamic_elements = WebDriverWait(driver, 30).until(
+    #                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, '[data-testid="youchat-text"]'))
+    #             )
+    #         except Exception as e:
+    #             print_exception()
+    #             time.sleep(RETRY_DELAY)
+    #             driver.quit()
+    #             if platform.machine() == "aarch64" and platform.system() == "Linux":
+    #                 display.stop()
+    #             continue
+    #         driver.quit()
+    #         if platform.machine() == "aarch64" and platform.system() == "Linux":
+    #             display.stop()
+    #         break
+    #     answer = ''
+    #     for elem in dynamic_elements:
+    #         text = element_strip(elem)
+    #         answer += text
+
+    #     # driver.quit()
+    #     # if platform.machine() == "aarch64" and platform.system() == "Linux":
+    #     #     display.stop()
+    #     store_llm_in_comments(answer, comment.id)
+    answer = ''
+    driver = None
     try:
-        dynamic_elements = []
-        driver =  None
         for i in range(MAX_RETRIES):
-dynamic_elements = []
-driver = None
-try:
-    for i in range(MAX_RETRIES):
-        try:
-            if platform.machine() == "aarch64" and platform.system() == "Linux":
-                display = Display(visible=0, size=(800, 600))
-                display.start()
+            try:
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display = Display(visible=0, size=(800, 600))
+                    display.start()
 
-            driver = webdriver.Chrome()
-            query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse under Rule 2. Criticism is fair and allowed. Tell me if this comment starting and ending with violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True. if it violates the rules or False. if it doesnt violate the rules. Give a short reason in 80 characters"
-            encoded_url = urllib.parse.quote(query)
-            driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
-            time.sleep(7)
-            print(driver.title)
+                driver = webdriver.Chrome()
+                query = f"for context, `{parent_comment}` is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse under Rule 2. Criticism is fair and allowed. Tell me if this comment starting and ending with violates the rule \n\n ```{comment.body}```.\n\n Your answer must start from True. if it violates the rules or False. if it doesnt violate the rules. Give a short reason in 80 characters"
+                encoded_url = urllib.parse.quote(query)
+                driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
+                time.sleep(7)
+                print(driver.title)
 
-            dynamic_elements = WebDriverWait(driver, 30).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, '[data-testid="youchat-text"]'))
-            )
-            break  # If successful, break the loop
+                dynamic_elements = WebDriverWait(driver, 30).until(
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, '[data-testid="youchat-text"]'))
+                )
+                if dynamic_elements:
+                    answer = ''.join([element_strip(elem) for elem in dynamic_elements])
+                    store_llm_in_comments(answer, comment.id)
 
-        except (WebDriverException, TimeoutException) as e:
-            print(f"Error encountered: {str(e)}")
-            time.sleep(RETRY_DELAY)
-            if driver:
-                driver.quit()
-            if platform.machine() == "aarch64" and platform.system() == "Linux":
-                display.stop()
-            continue  # Retry if exception occurs
+                break  # If successful, break the loop
 
-        finally:
-            if driver:
-                driver.quit()
-            if platform.machine() == "aarch64" and platform.system() == "Linux":
-                display.stop()
-
-        # Continue processing the elements after loop
-        if dynamic_elements:
-            answer = ''.join([element_strip(elem) for elem in dynamic_elements])
-            store_llm_in_comments(answer, comment.id)
-
-        answer = ''
-        for elem in dynamic_elements:
-            text = element_strip(elem)
-            answer += text
-
-        # driver.quit()
-        # if platform.machine() == "aarch64" and platform.system() == "Linux":
-        #     display.stop()
-        store_llm_in_comments(answer, comment.id)
+            except (WebDriverException, TimeoutException) as e:
+                print(f"Error encountered: {str(e)}")
+                time.sleep(RETRY_DELAY)
+                if driver:
+                    driver.quit()
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display.stop()
+                continue  # Retry if exception occurs
+            finally:
+                if driver:
+                    driver.quit()
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display.stop()
         if answer.startswith('True.'):
             reason = answer.split('True.')
             if len(reason) > 100:
@@ -113,3 +136,4 @@ try:
 
     except Exception as e:
         print_exception()
+
