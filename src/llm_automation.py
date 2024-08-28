@@ -57,7 +57,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
             break
         answer = ''
         for elem in dynamic_elements:
-            text = element.text.strip()
+            text = elem.text.strip()
             answer += text
 
         # driver.quit()
