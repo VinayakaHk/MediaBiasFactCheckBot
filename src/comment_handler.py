@@ -66,8 +66,8 @@ def handle_comment(comment: praw.models.Comment, subreddit: praw.models.Subreddi
             if has_submission_statement(comment):
                 print(f'Submission {comment.submission} approved. SS Comment: {comment}')
                 approve_submission(comment.submission, comment, comment.submission.is_self)
-        elif not comment.removed and not comment.approved and not comment.spam and not comment.saved and comment.banned_by is None and comment.author not in WHITELIST_LLM:
-            llm_comment(comment, subreddit.modmail)
+        # elif not comment.removed and not comment.approved and not comment.spam and not comment.saved and comment.banned_by is None and comment.author not in WHITELIST_LLM:
+        #     llm_comment(comment, subreddit.modmail)
     except Exception as e:
         print_exception()
 
