@@ -110,7 +110,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
                     driver.quit()
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.stop()
-        if answer.startswith('True.') and not 'does not' in answer:
+        if answer.startswith('True.') and not ['does not', 'without', 'respectful'] in answer:
             reason = answer.split('True.')
             if len(reason) > 100:
                 reason = reason[:100]
