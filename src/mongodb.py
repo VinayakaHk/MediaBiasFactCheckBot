@@ -248,3 +248,6 @@ def connect_to_mongo():
             time.sleep(RETRY_DELAY)
     print("Failed to connect to MongoDB after multiple attempts.")
     exit()
+
+
+connect_to_mongo()

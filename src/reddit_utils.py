@@ -53,10 +53,9 @@ def get_reply_text(domains, urls, comment=None):
     try:
         archive_links = f"""\n\n🔗 **Bypass paywalls**:\n\n"""
         for index, url in enumerate(urls):
-            archive_links += f"""* [archive.today - {domains[index]}
-                ](https://archive.is/submit/?submitid=&url={url}) | """
-            archive_links += f"""[Google Webcache - {
-            domains[index]}](http://webcache.googleusercontent.com/search?q=cache:{url})\n"""
+            archive_links += f"""* [{domains[index]}
+                ](https://www.removepaywall.com/search?url={url})  """
+            
 
         formatted_string = add_prefix_to_paragraphs(
             comment.body) if comment else ""
