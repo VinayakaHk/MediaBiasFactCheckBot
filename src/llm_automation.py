@@ -95,7 +95,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
                     answer = ''.join([element_strip(elem) for elem in dynamic_elements])
                     store_llm_in_comments(answer, comment.id)
 
-                break  # If successful, break the loop
+                break  
 
             except (WebDriverException, TimeoutException) as e:
                 print(f"Error encountered: {str(e)}")
@@ -104,7 +104,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
                     driver.quit()
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.stop()
-                continue  # Retry if exception occurs
+                continue  
             finally:
                 if driver:
                     driver.quit()
