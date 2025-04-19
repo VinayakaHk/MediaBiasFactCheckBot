@@ -47,7 +47,7 @@ def get_latest_news():
                     options.binary_location = "/usr/bin/chromium"
                     chrome_driver_path = "/usr/bin/chromedriver"
                 
-                driver = uc.Chrome(options=options)
+                driver = uc.Chrome(options=options, executable_path=chrome_driver_path)
                 
                 driver.get("https://www.perplexity.ai/search?q=give me the latest geopolitical news in this week and dont give an introduction")
                 print('driver',driver)
