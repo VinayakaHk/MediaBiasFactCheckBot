@@ -33,7 +33,7 @@ def get_latest_news():
     answer = ''
     driver = None
     display = Display(visible=False, size=(800, 600))
-    # chrome_driver_path = "/usr/bin/chromedriver"
+    chrome_driver_path = "/usr/bin/chromedriver"
     try:
         for i in range(MAX_RETRIES):
             print('i',i)
@@ -43,9 +43,9 @@ def get_latest_news():
                 options = uc.ChromeOptions()
                 if platform.system() == "Darwin": 
                     options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-                # elif platform.system() == "Linux":
-                #     options.binary_location = "/usr/bin/chromium"
-                #     chrome_driver_path = "/usr/bin/chromedriver"
+                elif platform.system() == "Linux":
+                    options.binary_location = "/usr/bin/chromium"
+                    chrome_driver_path = "/usr/bin/chromedriver"
                 
                 driver = uc.Chrome(options=options)
                 
