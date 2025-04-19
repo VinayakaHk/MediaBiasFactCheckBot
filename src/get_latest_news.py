@@ -3,7 +3,6 @@ import time
 import platform
 import re 
 
-from selenium.webdriver.chrome.options import Options
 
 
 import undetected_chromedriver as uc
@@ -34,14 +33,14 @@ def get_latest_news():
     answer = ''
     driver = None
     display = Display(visible=False, size=(800, 600))
-    chrome_driver_path = "/usr/bin/chromedriver"
+    # chrome_driver_path = "/usr/bin/chromedriver"
     try:
         for i in range(MAX_RETRIES):
             print('i',i)
             try:
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.start()
-                options = Options()
+                options = uc.ChromeOptions()
                 if platform.system() == "Darwin": 
                     options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
                 # elif platform.system() == "Linux":
