@@ -4,6 +4,7 @@ import platform
 import re 
 
 from selenium import webdriver
+from selenium.webdriver import chrome
 from selenium.webdriver.chrome.options import Options
 
 
@@ -35,7 +36,7 @@ def get_latest_news():
     answer = ''
     driver = None
     display = Display(visible=False, size=(800, 600))
-
+    chrome_driver_path = "/usr/bin/chromedriver"
     try:
         for i in range(MAX_RETRIES):
             print('i',i)
@@ -47,7 +48,9 @@ def get_latest_news():
                     options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
                 elif platform.system() == "Linux":
                     options.binary_location = "/usr/bin/chromium"
-                driver = uc.Chrome(options=options)
+                    chrome_driver_path = "/usr/bin/chromedriver"
+                
+                driver = uc.Chrome(driver_executable_path=chrome_driver_path, options=options)
                 
                 driver.get("https://www.perplexity.ai/search?q=give me the latest geopolitical news in this week and dont give an introduction")
                 print('driver',driver)
