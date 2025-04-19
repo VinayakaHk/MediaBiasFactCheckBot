@@ -3,8 +3,6 @@ import time
 import platform
 import re 
 
-from selenium import webdriver
-from selenium.webdriver import chrome
 from selenium.webdriver.chrome.options import Options
 
 
@@ -48,7 +46,7 @@ def get_latest_news():
                     options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
                 elif platform.system() == "Linux":
                     options.binary_location = "/usr/bin/chromium"
-                    chrome_driver_path = "./chromedriver"
+                    chrome_driver_path = "/usr/bin/chromedriver"
                 
                 driver = uc.Chrome(driver_executable_path=chrome_driver_path, options=options)
                 
