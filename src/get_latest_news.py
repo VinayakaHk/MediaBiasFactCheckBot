@@ -33,21 +33,23 @@ def get_latest_news():
     answer = ''
     driver = None
     display = Display(visible=False, size=(800, 600))
-    chrome_driver_path = "/usr/bin/chromedriver"
     try:
         for i in range(MAX_RETRIES):
             print('i',i)
             try:
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.start()
+                    
                 options = uc.ChromeOptions()
+                options.add_argument('--no-sandbox')
+                options.add_argument('--disable-dev-shm-usage')
+                
                 if platform.system() == "Darwin": 
                     options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
                 elif platform.system() == "Linux":
                     options.binary_location = "/usr/bin/chromium-browser"
-                    chrome_driver_path = "/usr/bin/chromedriver"
                 
-                driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
+                driver = uc.Chrome(options=options)  # Remove driver_executable_path parameter
                 
                 driver.get("https://www.perplexity.ai/search?q=give me the latest geopolitical news in this week and dont give an introduction")
                 print('driver',driver)
