@@ -1,6 +1,9 @@
+
 import time
 import urllib.parse
 import platform
+import re 
+
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -8,71 +11,72 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 
+from selenium.webdriver.chrome.options import Options
+from markdownify import markdownify as md
+
+options = Options()
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
 from pyvirtualdisplay import Display
 
 
 
-MAX_RETRIES = 3  
-RETRY_DELAY = 2  
+MAX_RETRIES = 10
+RETRY_DELAY = 10
 
 def element_strip(elem):
-    
     return elem.text.strip()
 
-def llm_detection (comment):
-    """
-    A function that performs llm detection using the provided comment, mod_mail, and parent_comment.
-    It checks for rule violations in the comment and takes appropriate actions based on the result.
-    """
-
+def format_for_reddit(answer ):
+    formatted_text = ""
+    formatted_text = re.sub(r'\[.*?\]', '', answer)
+    formatted_text = re.sub(r'\(.*?\)', '', formatted_text)
+    
+    return formatted_text
+def main_function():
     answer = ''
     driver = None
     display = Display(visible=False, size=(800, 600))
 
     try:
         for i in range(MAX_RETRIES):
+            print('i',i)
             try:
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.start()
 
-                driver = webdriver.Chrome()
-                query = f"for context, '' is the parent comment. Donot judge this. You are a moderator who disallows verbal abuse under Rule 2. Criticism is fair and allowed. Tell me if this comment starting and ending with violates the rule \n\n ```{comment}```.\n\n Your answer must start from either  (False. if it doesn't violate the rules )  or (True. if it does violate the rules) .  Give a short reason in under 80 characters"
+                driver = webdriver.Chrome(options=options)
+
+                query = f"give me the latest geopolitical news in this week"
                 encoded_url = urllib.parse.quote(query)
                 driver.get(f"https://www.perplexity.ai/search?q={encoded_url}")
-                time.sleep(7)
-                print(driver.title)
+                time.sleep(30)
 
-                dynamic_elements = WebDriverWait(driver, 30).until(
+                dynamic_elements = WebDriverWait(driver, 40).until(
                     EC.presence_of_all_elements_located((By.CLASS_NAME, 'prose'))
                 )
                 if dynamic_elements:
-                    answer = ''.join([element_strip(elem) for elem in dynamic_elements])
-                break  
-
+                    # Extract text and HTML from each element
+                    for element in dynamic_elements:
+                        html_content = element.get_attribute('innerHTML')
+                        answer = md(html_content)
+                break
             except (WebDriverException, TimeoutException) as e:
                 print(f"Error encountered: {str(e)}")
-                time.sleep(RETRY_DELAY)
                 if driver:
                     driver.quit()
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.stop()
+                time.sleep(RETRY_DELAY)
                 continue  
             finally:
                 if driver:
                     driver.quit()
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.stop()
-        if answer.startswith('True.') and not any(substring in answer for substring in ['does not', 'without', 'respectful']):
-            reason = answer.split('True.')
-            if len(reason) > 100:
-                reason = reason[:100]
-            print(reason[1])
-           
-        elif answer.startswith('False.'):
-            reason = answer.split('False.')
-            if len(reason) > 100:
-                reason = reason[:100]
-            print(reason[1])
+
+        if len(answer) > 0:
+            formatted_text = format_for_reddit(answer)
+            print("formatted Text ", formatted_text)
         else:
             print('API error', answer)
 
@@ -85,7 +89,6 @@ def llm_detection (comment):
             display.stop()
     return answer
 
-
 if __name__ == '__main__':
-    llm_detection("They should get their own life together first lol.")
+    main_function()
 
