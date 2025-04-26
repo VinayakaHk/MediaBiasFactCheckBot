@@ -1,9 +1,6 @@
-
 import time
 import platform
 import re 
-
-
 
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
@@ -23,11 +20,20 @@ RETRY_DELAY = 10
 def element_strip(elem):
     return elem.text.strip()
 
-def format_for_reddit(answer ):
-    formatted_text = ""
-    formatted_text = re.sub(r'\[.*?\]', '', answer)
-    formatted_text = re.sub(r'\(.*?\)', '', formatted_text)
+def format_for_reddit(answer):
+    # Use regex to find all citations in the format [number](url)
+    pattern = r'\[(\d+)\]\((https?://[^)]+)\)'
     
+    def replace_citation(match):
+        url = match.group(2)
+        # Extract domain from URL
+        domain = re.search(r'https?://(?:www\.)?([^/]+)', url)
+        if domain:
+            domain_name = domain.group(1)
+            return f' [[{domain_name}]]({url}) '
+        return match.group(0)
+    
+    formatted_text = re.sub(pattern, replace_citation, answer)
     return formatted_text
 def get_latest_news():
     answer = ''
@@ -48,17 +54,18 @@ def get_latest_news():
                     options.binary_location = "/usr/bin/chromium-browser"
                     chrome_driver_path = "/usr/bin/chromedriver"
                     driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
-                
-                driver.get("https://www.perplexity.ai/search?q=give me the latest geopolitical news in this week and dont give an introduction")
+                else :
+                    driver = uc.Chrome()
+                driver.get("https://www.perplexity.ai/search?q=What are the latest geopolitical news this week?")
                 print('driver',driver)
 
-                time.sleep(30)
-
+                WebDriverWait(driver, 40).until(
+                    EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Related')]"))
+                )
                 dynamic_elements = WebDriverWait(driver, 40).until(
                     EC.presence_of_all_elements_located((By.CLASS_NAME, 'prose'))
                 )
                 if dynamic_elements:
-                    # Extract text and HTML from each element
                     for element in dynamic_elements:
                         html_content = element.get_attribute('innerHTML')
                         answer = md(html_content)
@@ -80,6 +87,7 @@ def get_latest_news():
         if len(answer) > 0:
             formatted_text = format_for_reddit(answer)
             print("formatted Text ", formatted_text)
+            answer = formatted_text
         else:
             print('API error', answer)
 
@@ -91,4 +99,3 @@ def get_latest_news():
         if platform.machine() == "aarch64" and platform.system() == "Linux":
             display.stop()
     return answer
-
