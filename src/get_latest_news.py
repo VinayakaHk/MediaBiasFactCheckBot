@@ -42,12 +42,12 @@ def get_latest_news():
                     display.start()
                 options = uc.ChromeOptions()
                 if platform.system() == "Darwin": 
-                    options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+                    options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                    driver = uc.Chrome(options=options)
                 elif platform.system() == "Linux":
                     options.binary_location = "/usr/bin/chromium-browser"
                     chrome_driver_path = "/usr/bin/chromedriver"
-                
-                driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
+                    driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
                 
                 driver.get("https://www.perplexity.ai/search?q=give me the latest geopolitical news in this week and dont give an introduction")
                 print('driver',driver)

@@ -19,8 +19,6 @@ Welcome to this week's discussion thread!
 
 This thread is dedicated to exploring and discussing geopolitics . We will cover a wide range of topics, including current events, global trends, and potential developments.
 Please feel free to participate by sharing your own insights, analysis, or questions related to the geopolitical news.
-
-Here are some trending news this week: 
 """
     # Get latest news
     latest_news = get_latest_news()
