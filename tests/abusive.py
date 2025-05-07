@@ -121,6 +121,9 @@ content = [
 "nigger",
 "niglet",
 "piddi",
+"piddis*",
+"pissfool",
+"pig*",
 "pisful",
 "pislam",
 "pissfool",
@@ -130,6 +133,7 @@ content = [
 "pissfull",
 "peacefuls",
 "porki",
+"pork",
 "randi",
 "randia",
 "randian",
@@ -147,7 +151,7 @@ content = [
 "tanatan",
 "tanatani",
 "teri ma.*",
-"westoid.",
+"westoid",
 "whorensky",
 "wymen"
 ]
