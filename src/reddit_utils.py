@@ -24,7 +24,61 @@ def initialize_reddit() -> praw.Reddit:
         check_for_async=False
     )
 
-def send_to_modqueue(submission: praw.models.Submission) -> praw.models.ModmailConversation:
+
+def fetchDomainsandUrls(submission: praw.models.Submission, is_self: bool, comment: praw.models.Comment = None):
+    """
+    Extract domains and URLs from a submission's content.
+
+    Args:
+        submission (praw.models.Submission): The submission to extract content from
+        is_self (bool): Whether the submission is a self-post
+        comment (praw.models.Comment): Optional comment to analyze
+
+    Returns:
+        tuple: A tuple containing a list of unique URLs and a list of corresponding domains
+    """
+    try:
+        urls = []
+        domains = []
+
+        if not is_self:
+            # Handle link posts
+            full_text = str(submission.url)
+        else:
+            # Handle self-posts
+            full_text = submission.selftext
+
+        # Find all URLs
+        url_pattern = re.compile(r'https?://[^\s"\'<>]+')
+        url_matches = url_pattern.findall(full_text)
+
+        # Deduplicate and clean URLs
+        seen = set()
+        for url in url_matches:
+            if url not in seen:
+                seen.add(url)
+                urls.append(url)
+
+        # Extract domains from URLs
+        for url in urls:
+            match = re.search(r'https?://([a-zA-Z0-9.-]+)', url)
+            if match:
+                domains.append(match.group(1))
+
+        return urls, domains
+
+    except Exception as e:
+        print_exception()
+        time.sleep(60)
+        return [], []
+
+    except Exception as e:
+        print_exception()
+        time.sleep(60)
+
+
+
+def send_to_modqueue(submission: praw.models.Submission, is_self : bool) -> praw.models.ModmailConversation:
     """
     Send a submission to the modqueue and return the modmail message.
     
@@ -36,11 +90,26 @@ def send_to_modqueue(submission: praw.models.Submission) -> praw.models.ModmailC
     """
     try:
         submission.mod.remove()
+        urls, domains = fetchDomainsandUrls(submission, is_self, comment=None)
+        print('Sending to modqueue')
+        print('domains: ', domains)
+        print('urls: ', urls)
+        print('submission: ', submission)
+        print('submission.url: ', submission.url)
+        print('submission.selftext: ', submission.selftext)
+        removal_message = f"""Your submission has been filtered until you comment a Submission Statement. 
+Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. 
+Make sure it's about 1-2 paragraphs long. \n\n
+If you need assistance with writing a submission Statement, please refer to https://reddit.com/r/{SUBREDDIT}/wiki/submissionstatement/ .
+"""
+        if len(urls) > 0:
+            removal_message += f"""\n\n
+If you dont have access to the complete article, you can try the below links:\n\n
+"""
+            for index, url in enumerate(urls):
+                removal_message += f"""* [{domains[index]}](https://archive.is/submit/?submitid=&url={url})"""
         message = submission.mod.send_removal_message(
-            message=f"""Your submission has been filtered until you comment a Submission Statement.
-    Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement
-    to get your post approved. Make sure it's about 1-2 paragraphs long.
-    \n\nIf you need assistance with writing a submission Statement, please refer to https://reddit.com/r/{SUBREDDIT}/wiki/submissionstatement/ ."""
+            message=removal_message
         )
         message.mod.lock()
         return message
@@ -79,9 +148,9 @@ def approve_submission(submission, comment=None, is_self=True):
     try:
         submission.mod.approve()
         submission.comments.replace_more(limit=None)
-        for top_level_comment in submission.comments:
-            if str(top_level_comment.author).lower() == REDDIT_USERNAME.lower():
-                top_level_comment.delete()
+        for bot_comment in submission.comments:
+            if str(bot_comment.author).lower() == REDDIT_USERNAME.lower():
+                bot_comment.delete()
         if not is_self:
             url = str(submission.url)
             domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
@@ -111,13 +180,10 @@ def approve_submission(submission, comment=None, is_self=True):
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
             else:
-                # Extract URLs and domains from the selftext
                 for url, domain in zip(url_matches, domain_matches):
-                    # Check if the URL is already in the list
                     if url not in urls:
                         urls.append(url)
                         domains.append(domain)
-                # Generate reply text using the extracted domains and URLs
                 reply_text = get_reply_text(domains, urls, comment)
                 reply = submission.reply(body=reply_text)
                 reply.mod.distinguish(sticky=True)

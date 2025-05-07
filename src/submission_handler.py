@@ -47,13 +47,13 @@ def handle_new_submission(submission: praw.models.Submission):
     try :
         if not submission.is_self:
             print(f"Submission URL filtered: {submission}")
-            send_to_modqueue(submission)
+            send_to_modqueue(submission, False )
         else:
             if len(submission.selftext) > 200:
                 approve_submission(submission, None, True)
             else:
                 print(f"Self Text filtered: {submission}")
-                send_to_modqueue(submission)
+                send_to_modqueue(submission, True)
     except Exception as e:
         print_exception()
 # Add more submission-related functions here
