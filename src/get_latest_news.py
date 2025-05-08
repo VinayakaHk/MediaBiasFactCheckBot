@@ -56,7 +56,7 @@ def get_latest_news():
                     driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
                 else :
                     driver = uc.Chrome()
-                driver.get("https://www.perplexity.ai/search?q=What are the latest geopolitical news this week?")
+                driver.get("https://www.perplexity.ai/search?q=What are the latest geopolitical news this week? Make it region wise. ")
                 print('driver',driver)
 
                 WebDriverWait(driver, 40).until(

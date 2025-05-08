@@ -91,12 +91,6 @@ def send_to_modqueue(submission: praw.models.Submission, is_self : bool) -> praw
     try:
         submission.mod.remove()
         urls, domains = fetchDomainsandUrls(submission, is_self, comment=None)
-        print('Sending to modqueue')
-        print('domains: ', domains)
-        print('urls: ', urls)
-        print('submission: ', submission)
-        print('submission.url: ', submission.url)
-        print('submission.selftext: ', submission.selftext)
         removal_message = f"""Your submission has been filtered until you comment a Submission Statement. 
 Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. 
 Make sure it's about 1-2 paragraphs long. \n\n
@@ -112,6 +106,8 @@ If you dont have access to the complete article, you can try the below links:\n\
             message=removal_message
         )
         message.mod.lock()
+        message.mod.distinguish(sticky=True)
+        message.mod.approve()
         return message
     except Exception as e:
         print_exception()
@@ -147,6 +143,8 @@ def get_reply_text(domains, urls, comment=None):
 def approve_submission(submission, comment=None, is_self=True):
     try:
         submission.mod.approve()
+        if comment:
+            comment.mod.approve()
         submission.comments.replace_more(limit=None)
         for bot_comment in submission.comments:
             if str(bot_comment.author).lower() == REDDIT_USERNAME.lower():
@@ -160,6 +158,7 @@ def approve_submission(submission, comment=None, is_self=True):
             reply = submission.reply(body=reply_text)
             reply.mod.distinguish(sticky=True)
             reply.mod.lock()
+            reply.mod.approve()
         else:
             urls = []
             domains = []
@@ -179,6 +178,7 @@ def approve_submission(submission, comment=None, is_self=True):
                 reply = submission.reply(body=reply_text)
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
+                reply.mod.approve()
             else:
                 for url, domain in zip(url_matches, domain_matches):
                     if url not in urls:
@@ -188,6 +188,7 @@ def approve_submission(submission, comment=None, is_self=True):
                 reply = submission.reply(body=reply_text)
                 reply.mod.distinguish(sticky=True)
                 reply.mod.lock()
+                reply.mod.approve()
     except Exception as e:
         print_exception()
         time.sleep(60)
