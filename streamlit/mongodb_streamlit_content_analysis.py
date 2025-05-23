@@ -6,12 +6,11 @@ from collections import Counter
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
+nltk.download('all')
 
 # Connect to MongoDB
-client = MongoClient('mongodb://username:password@localhost:27017/')
-db = client['your_database']
+client = MongoClient('mongodb://192.168.1.50:27017/')
+db = client['reddit']
 
 # Retrieve submissions and comments data from MongoDB collections
 submissions_collection = db['submissions']
@@ -27,6 +26,7 @@ comments_df = pd.DataFrame(comments_data)
 # Content Analysis Functions
 def submission_domain_analysis(submissions_df):
     domain_counts = submissions_df['domain'].value_counts()
+    print(domain_counts)
     return domain_counts
 
 def submission_type_distribution(submissions_df):
@@ -53,15 +53,27 @@ st.header('Submission Domain Analysis')
 domain_counts = submission_domain_analysis(submissions_df)
 st.bar_chart(domain_counts)
 
+
 # Submission Type Distribution
 st.header('Submission Type Distribution')
 submission_types = submission_type_distribution(submissions_df)
-st.pie_chart(submission_types)
+
+# Create pie chart using matplotlib
+fig, ax = plt.subplots()
+ax.pie(submission_types.values, labels=submission_types.index, autopct='%1.1f%%')
+st.pyplot(fig)
+
 
 # Comment Length Distribution
 st.header('Comment Length Distribution')
 comment_lengths = comment_length_distribution(comments_df)
-st.hist(comment_lengths, bins=20)
+
+# Create histogram using matplotlib
+fig, ax = plt.subplots()
+ax.hist(comment_lengths, bins=20)
+ax.set_xlabel('Comment Length')
+ax.set_ylabel('Frequency')
+st.pyplot(fig)
 
 # Most Frequently Used Words in Submissions and Comments
 st.header('Most Frequently Used Words')
@@ -71,3 +83,4 @@ st.subheader('Most Frequently Used Words in Submissions')
 st.write(submission_words)
 st.subheader('Most Frequently Used Words in Comments')
 st.write(comment_words)
+

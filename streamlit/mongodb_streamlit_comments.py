@@ -6,7 +6,7 @@ from collections import Counter
 from textblob import TextBlob
 
 # Connect to MongoDB
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient('mongodb://192.168.1.50:27017/')
 db = client['reddit']
 
 # Retrieve comments data from MongoDB

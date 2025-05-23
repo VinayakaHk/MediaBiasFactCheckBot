@@ -26,12 +26,10 @@ def main():
     except KeyboardInterrupt:
         print('Monitoring stopped.')
         stop_threads.set()
-        # Wait for the threads to finish
         future_submission.result()
         future_comments.result()
     except Exception as e:
         print_exception()
-        # main()  # Restart the main function
 
 if __name__ == '__main__':
     main()

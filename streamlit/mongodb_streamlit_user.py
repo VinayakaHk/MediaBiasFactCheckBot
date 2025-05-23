@@ -4,8 +4,8 @@ from pymongo import MongoClient
 import matplotlib.pyplot as plt
 
 # Connect to MongoDB
-client = MongoClient('mongodb://username:password@localhost:27017/')
-db = client['your_database']
+client = MongoClient('mongodb://192.168.1.50:27017/')
+db = client['reddit']
 
 # Function to retrieve user behavior data
 def get_user_behavior(user_name):

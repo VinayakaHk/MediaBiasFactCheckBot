@@ -8,8 +8,6 @@ from src.llm_automation import llm_detection
 from src.reddit_utils import approve_submission
 from src.exceptions import print_exception
 
-
-
 def remove_and_reply(comment: praw.models.Comment, reply_body: str):
     """
     Remove a comment and reply with a specified message.

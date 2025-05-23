@@ -35,6 +35,7 @@ def format_for_reddit(answer):
     
     formatted_text = re.sub(pattern, replace_citation, answer)
     return formatted_text
+    
 def get_latest_news():
     answer = ''
     driver = None

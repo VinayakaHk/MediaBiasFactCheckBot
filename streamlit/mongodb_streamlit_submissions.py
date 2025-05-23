@@ -10,13 +10,11 @@ import numpy as np
 # Uses st.cache_resource to only run once.
 @st.cache_resource
 def init_connection():
-    return MongoClient('mongodb://localhost:27017')
+    return MongoClient('mongodb://192.168.1.50:27017')
 
 client = init_connection()
 
 db = client['reddit']
-# Pull data from the collection.
-# Uses st.cache_data to only rerun when the query changes or after 10 min.
 
 # Retrieve submissions data from MongoDB
 submissions_collection = db['submissions']
