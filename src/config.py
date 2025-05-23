@@ -9,7 +9,7 @@ CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 USER_AGENT = 'A lit af app fam'
 REDDIT_USERNAME = os.environ.get("REDDIT_USERNAME")
 PASSWORD = os.environ.get("PASSWORD")
-
+CONVERSATION_ID = os.environ.get("CONVERSATION_ID")
 # Subreddit configuration
 SUBREDDIT = os.environ.get('SUBREDDIT')
 

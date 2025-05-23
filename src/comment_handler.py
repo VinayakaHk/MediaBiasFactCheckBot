@@ -111,5 +111,3 @@ def llm_comment(comment: praw.models.Comment, mod_mail: praw.models.ModmailConve
         threading.Thread(target=llm_detection, args=(comment, mod_mail, parent_comment)).start()
     except Exception as e:
         print_exception()
-
-# Add more comment-related functions here

@@ -133,3 +133,8 @@ dmypy.json
 
 # Mongodb 
 /db/*
+.idea/*
+.pythonlibs/*
+typings/*
+.DS_Store
+.replit

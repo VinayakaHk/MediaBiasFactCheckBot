@@ -41,12 +41,7 @@ def fetchDomainsandUrls(submission: praw.models.Submission, is_self: bool, comme
         urls = []
         domains = []
 
-        if not is_self:
-            # Handle link posts
-            full_text = str(submission.url)
-        else:
-            # Handle self-posts
-            full_text = submission.selftext
+        full_text = submission.selftext if is_self else str(submission.url)
 
         # Find all URLs
         url_pattern = re.compile(r'https?://[^\s"\'<>]+')
@@ -58,12 +53,9 @@ def fetchDomainsandUrls(submission: praw.models.Submission, is_self: bool, comme
             if url not in seen:
                 seen.add(url)
                 urls.append(url)
-
-        # Extract domains from URLs
-        for url in urls:
-            match = re.search(r'https?://([a-zA-Z0-9.-]+)', url)
-            if match:
-                domains.append(match.group(1))
+                match = re.search(r'https?://([a-zA-Z0-9.-]+)', url)
+                if match:
+                    domains.append(match.group(1))
 
         return urls, domains
 
@@ -72,39 +64,26 @@ def fetchDomainsandUrls(submission: praw.models.Submission, is_self: bool, comme
         time.sleep(60)
         return [], []
 
-    except Exception as e:
-        print_exception()
-        time.sleep(60)
-
-
-
-def send_to_modqueue(submission: praw.models.Submission, is_self : bool) -> praw.models.ModmailConversation:
+def send_to_modqueue(submission: praw.models.Submission, is_self: bool) -> praw.models.ModmailConversation:
     """
     Send a submission to the modqueue and return the modmail message.
-    
-    Args:
-        submission (praw.models.Submission): The submission to be sent to modqueue
-    
-    Returns:
-        praw.models.ModmailConversation: The sent modmail message
     """
     try:
         submission.mod.remove()
-        urls, domains = fetchDomainsandUrls(submission, is_self, comment=None)
+        urls, domains = fetchDomainsandUrls(submission, is_self)
         removal_message = f"""Your submission has been filtered until you comment a Submission Statement. 
 Please add "Submission Statement" or "SS" (without the " ") while writing a submission Statement to get your post approved. 
 Make sure it's about 1-2 paragraphs long. \n\n
-If you need assistance with writing a submission Statement, please refer to https://reddit.com/r/{SUBREDDIT}/wiki/submissionstatement/ .
-"""
-        if len(urls) > 0:
+If you need assistance with writing a submission Statement, please refer to https://reddit.com/r/{SUBREDDIT}/wiki/submissionstatement/ ."""
+
+        if urls:
             removal_message += f"""\n\n
 If you dont have access to the complete article, you can try the below links:\n\n
 """
             for index, url in enumerate(urls):
                 removal_message += f"""* [{domains[index]}](https://archive.is/submit/?submitid=&url={url})"""
-        message = submission.mod.send_removal_message(
-            message=removal_message
-        )
+
+        message = submission.mod.send_removal_message(message=removal_message)
         message.mod.lock()
         message.mod.distinguish(sticky=True)
         message.mod.approve()
@@ -112,9 +91,10 @@ If you dont have access to the complete article, you can try the below links:\n\
     except Exception as e:
         print_exception()
 
-# Add more Reddit-related utility functions here
-
 def get_reply_text(domains, urls, comment=None):
+    """
+    Generate reply text with archive links and submission statement.
+    """
     try:
         archive_links = f"""\n\n🔗 **Bypass paywalls**:\n\n"""
         for index, url in enumerate(urls):
@@ -138,57 +118,45 @@ def get_reply_text(domains, urls, comment=None):
     except Exception as e:
         print('Exception occurred trying to create submission statement: ', e)
 
-
+def create_sticky_reply(submission, reply_text):
+    """
+    Create and configure a sticky reply on the submission.
+    """
+    reply = submission.reply(body=reply_text)
+    reply.mod.distinguish(sticky=True)
+    reply.mod.lock()
+    reply.mod.approve()
+    return reply
 
 def approve_submission(submission, comment=None, is_self=True):
+    """
+    Approve a submission and handle the reply creation.
+    """
     try:
         submission.mod.approve()
         if comment:
             comment.mod.approve()
+
+        # Remove existing bot comments
         submission.comments.replace_more(limit=None)
         for bot_comment in submission.comments:
             if str(bot_comment.author).lower() == REDDIT_USERNAME.lower():
                 bot_comment.delete()
-        if not is_self:
+
+        # Get URLs and domains
+        urls, domains = fetchDomainsandUrls(submission, is_self)
+        
+        # If no URLs found in self text, use submission URL
+        if is_self and not domains:
             url = str(submission.url)
             domain = re.search('https?://([A-Za-z_0-9.-]+).*', url).group(1)
-            domain = [domain]
-            url = [url]
-            reply_text = get_reply_text(domain, url, comment)
-            reply = submission.reply(body=reply_text)
-            reply.mod.distinguish(sticky=True)
-            reply.mod.lock()
-            reply.mod.approve()
-        else:
-            urls = []
-            domains = []
-            full_text = submission.selftext
-            url_pattern = re.compile(r'(https?://[^\]\s)]+)')
-            domain_pattern = re.compile(r'https?://([a-zA-Z0-9.-]+)')
+            urls = [url]
+            domains = [domain]
 
-            url_matches = url_pattern.findall(full_text)
-            domain_matches = domain_pattern.findall(full_text)
-            if (domain_matches == []):
-                url = str(submission.url)
-                domain = re.search(
-                    'https?://([A-Za-z_0-9.-]+).*', url).group(1)
-                domain = [domain]
-                url = [url]
-                reply_text = get_reply_text(domain, url, comment)
-                reply = submission.reply(body=reply_text)
-                reply.mod.distinguish(sticky=True)
-                reply.mod.lock()
-                reply.mod.approve()
-            else:
-                for url, domain in zip(url_matches, domain_matches):
-                    if url not in urls:
-                        urls.append(url)
-                        domains.append(domain)
-                reply_text = get_reply_text(domains, urls, comment)
-                reply = submission.reply(body=reply_text)
-                reply.mod.distinguish(sticky=True)
-                reply.mod.lock()
-                reply.mod.approve()
+        # Create and configure reply
+        reply_text = get_reply_text(domains, urls, comment)
+        create_sticky_reply(submission, reply_text)
+
     except Exception as e:
         print_exception()
         time.sleep(60)
