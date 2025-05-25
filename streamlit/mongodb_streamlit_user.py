@@ -13,15 +13,15 @@ def get_user_behavior(user_name):
     comments_collection = db['comments']
     
     # Retrieve user submission data
-    submissions_data = list(submissions_collection.find({'author': user_name}, {'created': 1}))
+    submissions_data = list(submissions_collection.find({'author': 'GeoIndModBot'}, {'created': 1}))
     submissions_df = pd.DataFrame(submissions_data)
-    submissions_df['created'] = pd.to_datetime(submissions_df['created'])
+    submissions_df['created'] = pd.to_datetime(submissions_df['created'].astype('float64'), unit='s')
     submissions_df['type'] = 'Submission'
     
     # Retrieve user comment data
-    comments_data = list(comments_collection.find({'author': user_name}, {'created_utc': 1}))
+    comments_data = list(comments_collection.find({'author': 'GeoIndModBot'}, {'created_utc': 1}))
     comments_df = pd.DataFrame(comments_data)
-    comments_df['created_utc'] = pd.to_datetime(comments_df['created_utc'], unit='s')
+    comments_df['created_utc'] = pd.to_datetime(comments_df['created_utc'].astype('float64'), unit='s')
     comments_df['type'] = 'Comment'
     
     # Combine submission and comment data
@@ -34,7 +34,7 @@ def get_user_behavior(user_name):
 st.title('User Behavior Analysis')
 
 # Get user input for username
-user_name = st.text_input('Enter username:', 'your_username')
+user_name = st.text_input('Enter username:', 'geoindmodbot')
 
 # Retrieve user behavior data
 user_behavior_df = get_user_behavior(user_name)
