@@ -17,7 +17,7 @@ def create_weekly_discussion():
     post_body = """
 Welcome to this week's discussion thread! 
 
-This thread is dedicated to exploring and discussing geopolitics . We will cover a wide range of topics, including current events, global trends, and potential developments.
+This thread is dedicated to exploring and discussing geopolitics. We will cover a wide range of topics, including current events, global trends, and potential developments.
 Please feel free to participate by sharing your own insights, analysis, or questions related to the geopolitical news.
 """
     # Get latest news

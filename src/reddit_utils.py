@@ -81,7 +81,7 @@ If you need assistance with writing a submission Statement, please refer to http
 If you dont have access to the complete article, you can try the below links:\n\n
 """
             for index, url in enumerate(urls):
-                removal_message += f"""* [{domains[index]}](https://archive.is/submit/?submitid=&url={url})"""
+                removal_message += f"""* [{domains[index]}](https://archive.today/?run=1&url={url})"""
 
         message = submission.mod.send_removal_message(message=removal_message)
         message.mod.lock()
@@ -98,7 +98,7 @@ def get_reply_text(domains, urls, comment=None):
     try:
         archive_links = f"""\n\n🔗 **Bypass paywalls**:\n\n"""
         for index, url in enumerate(urls):
-            archive_links += f"""* [{domains[index]}](https://archive.is/submit/?submitid=&url={url})"""
+            archive_links += f"""* [{domains[index]}](https://archive.today/?run=1&url={url})"""
         formatted_string = add_prefix_to_paragraphs(
             comment.body) if comment else ""
 

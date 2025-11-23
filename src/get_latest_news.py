@@ -58,7 +58,6 @@ def get_latest_news():
                 else :
                     driver = uc.Chrome()
                 driver.get("https://www.perplexity.ai/search?q=What are the latest geopolitical news this week? Make it region wise. ")
-                print('driver',driver)
 
                 WebDriverWait(driver, 40).until(
                     EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Related')]"))
@@ -89,6 +88,69 @@ def get_latest_news():
             formatted_text = format_for_reddit(answer)
             print("formatted Text ", formatted_text)
             answer = formatted_text
+        else:
+            print('API error', answer)
+
+    except Exception as e:
+        print(e)
+    finally:
+        if driver:
+            driver.quit()
+        if platform.machine() == "aarch64" and platform.system() == "Linux":
+            display.stop()
+    return answer
+
+def get_summary_from_url(url: str):
+    answer = ''
+    driver = None
+    display = Display(visible=False, size=(800, 600))
+    chrome_driver_path = "/usr/bin/chromedriver"
+    try:
+        for i in range(MAX_RETRIES):
+            print('i',i)
+            try:
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display.start()
+                options = uc.ChromeOptions()
+                if platform.system() == "Darwin": 
+                    options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+                    driver = uc.Chrome(options=options)
+                elif platform.system() == "Linux":
+                    options.binary_location = "/usr/bin/chromium-browser"
+                    chrome_driver_path = "/usr/bin/chromedriver"
+                    driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
+                else :
+                    driver = uc.Chrome()
+                driver.get("https://www.perplexity.ai/search?q="+url+" \n Summarize the content of this article in a single paragraph")
+
+                WebDriverWait(driver, 40).until(
+                    EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Related')]"))
+                )
+                dynamic_elements = WebDriverWait(driver, 40).until(
+                    EC.presence_of_all_elements_located((By.CLASS_NAME, 'prose'))
+                )
+                if dynamic_elements:
+                    for element in dynamic_elements:
+                        html_content = element.get_attribute('innerHTML')
+                        answer = md(html_content)
+                break
+            except (WebDriverException, TimeoutException) as e:
+                print(f"Error encountered: {str(e)}")
+                if driver:
+                    driver.quit()
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display.stop()
+                time.sleep(RETRY_DELAY)
+                continue  
+            finally:
+                if driver:
+                    driver.quit()
+                if platform.machine() == "aarch64" and platform.system() == "Linux":
+                    display.stop()
+
+        if len(answer) > 0:
+            cleaned_text = re.sub(r'\[[^\]]*\]\([^)]+\)', '', answer)
+            answer = cleaned_text.strip()
         else:
             print('API error', answer)
 
