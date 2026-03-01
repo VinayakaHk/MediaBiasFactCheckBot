@@ -2,17 +2,40 @@ import time
 import platform
 import re 
 
+from selenium import webdriver
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
-from markdownify import markdownify as md
+display = None
+try:
+    # start Xvfb only if not already running (Linux/CI). On Mac prefer headless without Xvfb.
+    if not Display().is_alive():
+        display = Display(visible=0, size=(1920, 1080))
+        display.start()
 
-from pyvirtualdisplay import Display
+    options = Options()
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--headless=new")  # or "--headless" depending on Chrome version
 
-
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
+    # use driver...
+finally:
+    try:
+        driver.quit()
+    except Exception:
+        pass
+    if display:
+        display.stop()
 
 MAX_RETRIES = 10
 RETRY_DELAY = 10
@@ -40,7 +63,7 @@ def get_latest_news():
     answer = ''
     driver = None
     display = Display(visible=False, size=(800, 600))
-    chrome_driver_path = "/usr/bin/chromedriver"
+    firefox_driver_path = "/opt/homebrew/bin/geckodriver"
     try:
         for i in range(MAX_RETRIES):
             print('i',i)
@@ -48,13 +71,15 @@ def get_latest_news():
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.start()
                 options = uc.ChromeOptions()
-                if platform.system() == "Darwin": 
-                    options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-                    driver = uc.Chrome(options=options)
+                if platform.system() == "Darwin":
+                    options.binary_location = "/Applications/Firefox.app/Contents/MacOS/firefox"
+                    service = Service(firefox_driver_path)
+                    options = Options()
+                    driver = webdriver.Firefox(options=options, service=service) 
                 elif platform.system() == "Linux":
                     options.binary_location = "/usr/bin/chromium-browser"
-                    chrome_driver_path = "/usr/bin/chromedriver"
-                    driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
+                    firefox_driver_path = "/usr/bin/chromedriver"
+                    driver = uc.Chrome(options=options, driver_executable_path=firefox_driver_path)
                 else :
                     driver = uc.Chrome()
                 driver.get("https://www.perplexity.ai/search?q=What are the latest geopolitical news this week? Make it region wise. ")
