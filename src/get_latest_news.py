@@ -48,11 +48,14 @@ def get_latest_news():
                 if platform.machine() == "aarch64" and platform.system() == "Linux":
                     display.start()
                 options = uc.ChromeOptions()
+                options.add_argument('--no-sandbox')
+                options.add_argument('-disable-gpu options')
+                options.add_argument('--disable-blink-features=AutomationControlled')
                 if platform.system() == "Darwin": 
                     options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-                    driver = uc.Chrome(options=options)
+                    driver = uc.Chrome(options=options,headless=True,use_subprocess=False)
                 elif platform.system() == "Linux":
-                    options.binary_location = "/usr/bin/chromium-browser"
+                    options.binary_location = "/usr/bin/brave-browser"
                     chrome_driver_path = "/usr/bin/chromedriver"
                     driver = uc.Chrome(options=options, driver_executable_path=chrome_driver_path)
                 else :
