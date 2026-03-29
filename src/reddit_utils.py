@@ -52,7 +52,7 @@ If you need assistance with writing a submission Statement, please refer to http
         if urls:
             removal_message += "\n\nIf you dont have access to the complete article, you can try the below links:\n\n"
             for index, url in enumerate(urls):
-                removal_message += f"* [{domains[index]}](https://archive.is/submit/?submitid=&url={url})"
+                removal_message += f"* [{domains[index]}](https://unwall.app/{url})"
 
         message = submission.mod.send_removal_message(message=removal_message)
         message.mod.lock()
@@ -67,7 +67,7 @@ def get_reply_text(domains, urls, comment=None):
     try:
         archive_links = "\n\n🔗 **Bypass paywalls**:\n\n"
         for index, url in enumerate(urls):
-            archive_links += f"* [{domains[index]}](https://archive.is/submit/?submitid=&url={url})"
+            archive_links += f"* [{domains[index]}](https://unwall.app/{url})"
 
         formatted_string = add_prefix_to_paragraphs(comment.body) if comment else ""
         submission_statement = f'📣 **[Submission Statement by OP]({comment.permalink})**:\n> {formatted_string}' if comment else ""
