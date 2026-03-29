@@ -1,14 +1,20 @@
 import re
-import json 
-from  src.exceptions import print_exception
+import json
+from functools import lru_cache
+from src.exceptions import logger
+from src.config import MBFC_JSON_PATH
+
+
 def add_prefix_to_paragraphs(input_string):
     try:
         formatted_string = re.sub(r'\n+', '\n>\n>', input_string)
         formatted_string = re.sub(r'(?<=\n\n)(?=[^\n])', "> ", formatted_string)
         return formatted_string
-    except Exception as e:
-        print_exception()
-        
+    except Exception:
+        logger.exception("Failed to format paragraphs")
+        return input_string
+
+
 def print_mbfc_text(domain, obj):
     text = f"""\n\n**📰 Media Bias fact Check Rating :**  {obj['name']} \n\n\n\n
 |Metric|Rating|
@@ -26,22 +32,21 @@ def print_mbfc_text(domain, obj):
     return text
 
 
+@lru_cache(maxsize=1)
+def _load_mbfc_data():
+    with open(MBFC_JSON_PATH, 'r') as f:
+        data = json.load(f)
+    return {entry["url"]: entry for entry in data}
+
+
 def mbfc_political_bias(domain_url):
     try:
-        with open('./docs/MBFC_modified.json', 'r') as mbfc_file:
-            mbfc_data = json.load(mbfc_file)
-        url_index = {entry["url"]: entry for entry in mbfc_data}
-
-        if domain_url in url_index:
-            retrieved_data = url_index[domain_url]
-            text = print_mbfc_text(retrieved_data['url'], retrieved_data)
-            return text
-        else:
-            print("URL not found in the index")
-            return None
-
-    except Exception as e:
-        print('Exception ', e)
-        print_exception()
-        time.sleep(60)
-
+        index = _load_mbfc_data()
+        entry = index.get(domain_url)
+        if entry:
+            return print_mbfc_text(entry['url'], entry)
+        logger.info(f"URL not found in MBFC index: {domain_url}")
+        return None
+    except Exception:
+        logger.exception("Failed to look up MBFC data")
+        return None

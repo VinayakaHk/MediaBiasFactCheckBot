@@ -6,10 +6,10 @@ load_dotenv()
 # Reddit API credentials
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-USER_AGENT = 'A lit af app fam'
+USER_AGENT = f'MediaBiasFactCheckBot/1.0 by u/{os.environ.get("REDDIT_USERNAME")}'
 REDDIT_USERNAME = os.environ.get("REDDIT_USERNAME")
 PASSWORD = os.environ.get("PASSWORD")
-CONVERSATION_ID = os.environ.get("CONVERSATION_ID")
+
 # Subreddit configuration
 SUBREDDIT = os.environ.get('SUBREDDIT')
 
@@ -26,5 +26,3 @@ SUBMISSION_STATEMENT_FORMAT_INCORRECT = """Your Submission Statement should star
 
 # Other configuration settings
 MBFC_JSON_PATH = './docs/MBFC_modified.json'
-
-# Add more configuration variables as needed

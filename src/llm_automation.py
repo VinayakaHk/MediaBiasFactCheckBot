@@ -14,7 +14,7 @@ from selenium.common.exceptions import WebDriverException, TimeoutException
 from pyvirtualdisplay import Display
 
 
-from src.exceptions import print_exception
+from src.exceptions import logger
 
 MAX_RETRIES = 3  # Maximum number of retry attempts
 RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
@@ -85,7 +85,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
                 # driver.get(f"https://you.com/search?q={encoded_url}&fromSearchBar=true&tbm=youchat")
                 driver.get(f"https://www.perplexity.ai/search?q={encoded_url}")
                 time.sleep(7)
-                print(driver.title)
+                logger.info(driver.title)
 
                 dynamic_elements = WebDriverWait(driver, 30).until(
                     EC.presence_of_all_elements_located((By.CLASS_NAME, 'prose'))
@@ -97,7 +97,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
                 break  
 
             except (WebDriverException, TimeoutException) as e:
-                print(f"Error encountered: {str(e)}")
+                logger.warning(f"Error encountered: {str(e)}")
                 time.sleep(RETRY_DELAY)
                 if driver:
                     driver.quit()
@@ -133,8 +133,8 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
         elif answer.startswith('False'):
             comment.save()
         else:
-            print('API error', answer)
+            logger.warning(f"LLM API unexpected response: {answer}")
 
     except Exception as e:
-        print_exception()
+        logger.exception("Error in LLM detection")
 
