@@ -1,21 +1,23 @@
 import time
 import threading
 import praw
-from src.config import MIN_SUBMISSION_STATEMENT_LENGTH
 from src.mongodb import (
     store_submission_in_mongo, init_submission_state,
     transition_to_awaiting_ss, transition_to_approved, STATE_APPROVED
 )
 from src.reddit_utils import send_to_modqueue, approve_submission
 from src.exceptions import logger
+from src.utils import exponential_backoff, is_valid_submission_statement
 
 
 def monitor_submission(subreddit: praw.models.Subreddit, stop_threads: threading.Event):
+    attempt = 0
     while not stop_threads.is_set():
         try:
             for submission in subreddit.stream.submissions(skip_existing=True):
                 if submission is None:
                     continue
+                attempt = 0  # reset on success
 
                 logger.info(f"Submission: {submission}, Approved: {submission.approved}, Removed by: {submission.removed_by}")
                 store_submission_in_mongo(submission)
@@ -28,10 +30,12 @@ def monitor_submission(subreddit: praw.models.Subreddit, stop_threads: threading
                 time.sleep(2)
         except praw.exceptions.RedditAPIException:
             logger.exception("Reddit API error in submission monitor")
-            time.sleep(60)
+            exponential_backoff(attempt)
+            attempt += 1
         except Exception:
             logger.exception("Unexpected error in submission monitor")
-            time.sleep(60)
+            exponential_backoff(attempt)
+            attempt += 1
 
 
 def handle_new_submission(submission: praw.models.Submission):
@@ -69,9 +73,7 @@ def scan_existing_comments_for_ss(submission: praw.models.Submission):
                 continue
             if comment.parent_id != comment.link_id:
                 continue
-            lower_body = comment.body.lower()
-            if (lower_body.startswith("submission statement") or lower_body.startswith("ss")) \
-                    and len(comment.body) > MIN_SUBMISSION_STATEMENT_LENGTH:
+            if is_valid_submission_statement(comment.body):
                 return comment
         return None
     except Exception:

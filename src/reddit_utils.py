@@ -4,7 +4,7 @@ import time
 import os
 from src.config import CLIENT_ID, CLIENT_SECRET, USER_AGENT, REDDIT_USERNAME, PASSWORD, SUBREDDIT
 from src.exceptions import logger
-from src.utils import add_prefix_to_paragraphs, mbfc_political_bias
+from src.utils import add_prefix_to_paragraphs, mbfc_political_bias, exponential_backoff
 
 
 def initialize_reddit() -> praw.Reddit:
@@ -119,4 +119,4 @@ def approve_submission(submission, comment=None, is_self=True):
         create_sticky_reply(submission, reply_text)
     except Exception:
         logger.exception("Error approving submission")
-        time.sleep(60)
+        exponential_backoff(0)

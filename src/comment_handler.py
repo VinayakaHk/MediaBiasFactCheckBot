@@ -3,7 +3,7 @@ import threading
 import praw
 from src.config import (
     WHITELIST_LLM, SUBMISSION_STATEMENT_TOO_SHORT,
-    SUBMISSION_STATEMENT_FORMAT_INCORRECT, MIN_SUBMISSION_STATEMENT_LENGTH, REDDIT_USERNAME
+    SUBMISSION_STATEMENT_FORMAT_INCORRECT, REDDIT_USERNAME
 )
 from src.mongodb import (
     store_comment_in_mongo, comment_body,
@@ -13,6 +13,7 @@ from src.mongodb import (
 from src.llm_automation import llm_detection
 from src.reddit_utils import approve_submission
 from src.exceptions import logger
+from src.utils import exponential_backoff, is_valid_submission_statement
 
 
 def remove_and_reply(comment: praw.models.Comment, reply_body: str):
@@ -24,11 +25,13 @@ def remove_and_reply(comment: praw.models.Comment, reply_body: str):
 
 
 def monitor_comments(subreddit: praw.models.Subreddit, stop_threads: threading.Event):
+    attempt = 0
     while not stop_threads.is_set():
         try:
             for comment in subreddit.stream.comments(skip_existing=True):
                 if comment is None:
                     continue
+                attempt = 0  # reset on success
 
                 logger.info(f"Comment: {comment}, Author: {comment.author}")
                 store_comment_in_mongo(comment)
@@ -36,10 +39,12 @@ def monitor_comments(subreddit: praw.models.Subreddit, stop_threads: threading.E
                 time.sleep(2)
         except praw.exceptions.RedditAPIException:
             logger.exception("Reddit API error in comment monitor")
-            time.sleep(60)
+            exponential_backoff(attempt)
+            attempt += 1
         except Exception:
             logger.exception("Unexpected error in comment monitor")
-            time.sleep(60)
+            exponential_backoff(attempt)
+            attempt += 1
 
 
 def handle_comment(comment: praw.models.Comment):
@@ -73,18 +78,17 @@ def handle_comment(comment: praw.models.Comment):
 
 def has_submission_statement(comment: praw.models.Comment) -> bool:
     try:
+        if is_valid_submission_statement(comment.body):
+            return True
+
         lower_body = comment.body.lower()
-        if lower_body.startswith("submission statement") or lower_body.startswith("ss"):
-            if len(comment.body) > MIN_SUBMISSION_STATEMENT_LENGTH:
-                return True
+        starts_correct = lower_body.startswith("submission statement") or lower_body.startswith("ss")
+        if not comment.removed:
+            if starts_correct:
+                remove_and_reply(comment, SUBMISSION_STATEMENT_TOO_SHORT)
             else:
-                if not comment.removed:
-                    remove_and_reply(comment, SUBMISSION_STATEMENT_TOO_SHORT)
-                return False
-        else:
-            if not comment.removed:
                 remove_and_reply(comment, SUBMISSION_STATEMENT_FORMAT_INCORRECT)
-            return False
+        return False
     except Exception:
         logger.exception("Error checking submission statement")
         return False

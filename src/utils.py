@@ -1,8 +1,20 @@
 import re
 import json
+import random
+import time
 from functools import lru_cache
 from src.exceptions import logger
 from src.config import MBFC_JSON_PATH
+
+MAX_BACKOFF = 300  # 5 minute cap
+
+
+def exponential_backoff(attempt, max_wait=MAX_BACKOFF):
+    """Sleep with exponential backoff + jitter. Returns the wait time used."""
+    wait = min(2 ** attempt, max_wait) + random.uniform(0, 1)
+    logger.info(f"Backing off for {wait:.1f}s (attempt {attempt + 1})")
+    time.sleep(wait)
+    return wait
 
 
 def add_prefix_to_paragraphs(input_string):
@@ -37,6 +49,14 @@ def _load_mbfc_data():
     with open(MBFC_JSON_PATH, 'r') as f:
         data = json.load(f)
     return {entry["url"]: entry for entry in data}
+
+
+def is_valid_submission_statement(body: str) -> bool:
+    """Single source of truth for SS validation."""
+    from src.config import MIN_SUBMISSION_STATEMENT_LENGTH
+    lower = body.lower()
+    return (lower.startswith("submission statement") or lower.startswith("ss")) \
+        and len(body) > MIN_SUBMISSION_STATEMENT_LENGTH
 
 
 def mbfc_political_bias(domain_url):

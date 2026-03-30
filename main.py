@@ -2,11 +2,12 @@ import signal
 import threading
 import time
 from dotenv import load_dotenv
-from src.config import SUBREDDIT, MIN_SUBMISSION_STATEMENT_LENGTH
+from src.config import SUBREDDIT
 from src.reddit_utils import initialize_reddit, approve_submission
 from src.submission_handler import monitor_submission
 from src.comment_handler import monitor_comments
 from src.mongodb import get_stale_awaiting_ss, transition_to_approved
+from src.utils import is_valid_submission_statement
 from src.exceptions import logger
 
 load_dotenv()
@@ -36,9 +37,7 @@ def retry_sweep(reddit, stop_threads: threading.Event):
                     for comment in submission.comments:
                         if not comment.is_submitter or comment.parent_id != comment.link_id:
                             continue
-                        lower_body = comment.body.lower()
-                        if (lower_body.startswith("submission statement") or lower_body.startswith("ss")) \
-                                and len(comment.body) > MIN_SUBMISSION_STATEMENT_LENGTH:
+                        if is_valid_submission_statement(comment.body):
                             if transition_to_approved(doc['submission_id'], str(comment.id)):
                                 logger.info(f"Retry sweep: approved {submission} via comment {comment}")
                                 approve_submission(submission, comment, submission.is_self)
