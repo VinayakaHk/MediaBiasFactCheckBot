@@ -28,7 +28,6 @@ try:
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
-    # use driver...
 finally:
     try:
         driver.quit()

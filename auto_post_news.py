@@ -112,11 +112,21 @@ def summarize_with_perplexity(article_url, article_title):
                     display.start()
 
                 if platform.system() == "Darwin":
-                    options = Options()
+                    firefox_options = Options()
+                    firefox_options.add_argument("--no-sandbox")
+                    firefox_options.add_argument("--disable-dev-shm-usage")
+                    firefox_options.add_argument("--disable-gpu")
+                    firefox_options.add_argument("--window-size=1920,1080")
+                    firefox_options.add_argument("--headless=new")
                     service = Service(FIREFOX_DRIVER_PATH)
-                    driver = webdriver.Firefox(options=options, service=service)
+                    driver = webdriver.Firefox(options=firefox_options, service=service)
                 elif platform.system() == "Linux":
                     options = uc.ChromeOptions()
+                    options.add_argument("--no-sandbox")
+                    options.add_argument("--disable-dev-shm-usage")
+                    options.add_argument("--disable-gpu")
+                    options.add_argument("--window-size=1920,1080")
+                    options.add_argument("--headless=new")
                     options.binary_location = "/usr/bin/chromium-browser"
                     driver = uc.Chrome(options=options, driver_executable_path="/usr/bin/chromedriver")
                 else:
