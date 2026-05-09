@@ -86,7 +86,7 @@ def get_latest_news():
                 print('driver',driver)
 
                 WebDriverWait(driver, 40).until(
-                    EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Related')]"))
+                    EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Follow-ups')]"))
                 )
                 dynamic_elements = WebDriverWait(driver, 40).until(
                     EC.presence_of_all_elements_located((By.CLASS_NAME, 'prose'))
