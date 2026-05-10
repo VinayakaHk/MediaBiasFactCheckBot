@@ -54,18 +54,9 @@ def get_latest_news():
                     options.add_argument("--headless")
                     driver = webdriver.Firefox(options=options, service=service) 
                 elif platform.system() == "Linux":
-                    from selenium.webdriver.chrome.service import Service as ChromeService
-                    from selenium.webdriver.chrome.options import Options as ChromeOptions
-                    chrome_options = ChromeOptions()
-                    chrome_options.add_argument("--no-sandbox")
-                    chrome_options.add_argument("--disable-dev-shm-usage")
-                    chrome_options.add_argument("--disable-gpu")
-                    chrome_options.add_argument("--window-size=1920,1080")
-                    chrome_options.add_argument("--headless=new")
-                    chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36")
-                    chrome_options.binary_location = "/usr/bin/chromium-browser"
-                    chrome_service = ChromeService("/usr/bin/chromedriver")
-                    driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+                    options = Options()
+                    options.add_argument("--headless")
+                    driver = webdriver.Firefox(options=options)
                 else :
                     driver = uc.Chrome()
                 driver.get("https://www.perplexity.ai/search?q=What are the latest geopolitical news this week? Make it region wise. ")
