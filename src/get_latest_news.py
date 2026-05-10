@@ -17,29 +17,6 @@ try:
 except ImportError:
     Display = None
 
-if platform.system() == "Linux":
-    display = None
-    try:
-        if Display and not Display().is_alive():
-            display = Display(visible=0, size=(1920, 1080))
-            display.start()
-
-        chrome_options = uc.ChromeOptions()
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument("--headless=new")
-
-        driver = uc.Chrome(options=chrome_options, driver_executable_path="/usr/bin/chromedriver")
-    finally:
-        try:
-            driver.quit()
-        except Exception:
-            pass
-        if display:
-            display.stop()
-
 MAX_RETRIES = 10
 RETRY_DELAY = 10
 
