@@ -10,7 +10,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from markdownify import markdownify as md
 
 try:
@@ -32,8 +31,7 @@ if platform.system() == "Linux":
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--headless=new")
 
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
+        driver = uc.Chrome(options=options, driver_executable_path="/usr/bin/chromedriver")
     finally:
         try:
             driver.quit()
