@@ -42,19 +42,16 @@ def format_for_reddit(text):
 def get_latest_news():
     answer = ''
     driver = None
-    display = Display(visible=False, size=(800, 600))
+    display = None
     firefox_driver_path = "/opt/homebrew/bin/geckodriver"
     try:
         for i in range(MAX_RETRIES):
             print('i',i)
             try:
-                if platform.machine() == "aarch64" and platform.system() == "Linux":
-                    display.start()
-                options = uc.ChromeOptions()
                 if platform.system() == "Darwin":
-                    options.binary_location = "/Applications/Firefox.app/Contents/MacOS/firefox"
                     service = Service(firefox_driver_path)
                     options = Options()
+                    options.add_argument("--headless")
                     driver = webdriver.Firefox(options=options, service=service) 
                 elif platform.system() == "Linux":
                     from selenium.webdriver.chrome.service import Service as ChromeService
@@ -65,6 +62,7 @@ def get_latest_news():
                     chrome_options.add_argument("--disable-gpu")
                     chrome_options.add_argument("--window-size=1920,1080")
                     chrome_options.add_argument("--headless=new")
+                    chrome_options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36")
                     chrome_options.binary_location = "/usr/bin/chromium-browser"
                     chrome_service = ChromeService("/usr/bin/chromedriver")
                     driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
@@ -88,15 +86,13 @@ def get_latest_news():
                 print(f"Error encountered: {str(e)}")
                 if driver:
                     driver.quit()
-                if platform.machine() == "aarch64" and platform.system() == "Linux":
-                    display.stop()
+                    driver = None
                 time.sleep(RETRY_DELAY)
                 continue  
             finally:
                 if driver:
                     driver.quit()
-                if platform.machine() == "aarch64" and platform.system() == "Linux":
-                    display.stop()
+                    driver = None
 
         if len(answer) > 0:
             formatted_text = format_for_reddit(answer)
@@ -110,6 +106,4 @@ def get_latest_news():
     finally:
         if driver:
             driver.quit()
-        if platform.machine() == "aarch64" and platform.system() == "Linux":
-            display.stop()
     return answer
