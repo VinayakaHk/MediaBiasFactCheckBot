@@ -111,7 +111,7 @@ def main():
 
     print("Summarizing with Perplexity...")
     summary = query_perplexity(
-        f"Summarize this news article in 2-3 paragraphs for a geopolitics discussion forum: {article['title']} {article['url']}"
+        f"Summarize this news article in 2-3 paragraphs for a geopolitics discussion forum: {article['title']} {article['url']} \n\n Make sure to include key facts, context, and implications. Avoid opinions or analysis. Focus on the who, what, when, where, and why. Donot ask any follow up questions."
     )
     if not summary or len(summary) < 160:
         print("Failed to get summary or summary too short. Exiting.")
