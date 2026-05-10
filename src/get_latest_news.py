@@ -54,9 +54,10 @@ def get_latest_news():
                     options.add_argument("--headless")
                     driver = webdriver.Firefox(options=options, service=service) 
                 elif platform.system() == "Linux":
+                    service = Service("/usr/local/bin/geckodriver")
                     options = Options()
                     options.add_argument("--headless")
-                    driver = webdriver.Firefox(options=options)
+                    driver = webdriver.Firefox(options=options, service=service)
                 else :
                     driver = uc.Chrome()
                 driver.get("https://www.perplexity.ai/search?q=What are the latest geopolitical news this week? Make it region wise. ")
