@@ -24,14 +24,14 @@ if platform.system() == "Linux":
             display = Display(visible=0, size=(1920, 1080))
             display.start()
 
-        options = Options()
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument("--headless=new")
+        chrome_options = uc.ChromeOptions()
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--headless=new")
 
-        driver = uc.Chrome(options=options, driver_executable_path="/usr/bin/chromedriver")
+        driver = uc.Chrome(options=chrome_options, driver_executable_path="/usr/bin/chromedriver")
     finally:
         try:
             driver.quit()
