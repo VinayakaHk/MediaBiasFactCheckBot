@@ -110,14 +110,7 @@ def summarize_with_perplexity(article_url, article_title):
                 if platform.machine() == "aarch64" and platform.system() == "Linux" and Display:
                     display = Display(visible=False, size=(800, 600))
                     display.start()
-
                 if platform.system() == "Darwin":
-                    firefox_options = Options()
-                    firefox_options.add_argument("--no-sandbox")
-                    firefox_options.add_argument("--disable-dev-shm-usage")
-                    firefox_options.add_argument("--disable-gpu")
-                    firefox_options.add_argument("--window-size=1920,1080")
-                    firefox_options.add_argument("--headless=new")
                     service = Service(FIREFOX_DRIVER_PATH)
                     driver = webdriver.Firefox(options=firefox_options, service=service)
                 elif platform.system() == "Linux":
@@ -177,7 +170,6 @@ def format_for_reddit(text):
         return match.group(0)
 
     text = re.sub(pattern, replace_citation, text)
-    # Remove source reference artifacts like "domain+3", "+1", "+2" etc.
     text = re.sub(r'\w*\+\d+', '', text)
     return text.strip()
 

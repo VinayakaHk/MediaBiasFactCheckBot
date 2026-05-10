@@ -11,30 +11,36 @@ from selenium.common.exceptions import WebDriverException, TimeoutException
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+from markdownify import markdownify as md
 
-display = None
 try:
-    # start Xvfb only if not already running (Linux/CI). On Mac prefer headless without Xvfb.
-    if not Display().is_alive():
-        display = Display(visible=0, size=(1920, 1080))
-        display.start()
+    from pyvirtualdisplay import Display
+except ImportError:
+    Display = None
 
-    options = Options()
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--headless=new")  # or "--headless" depending on Chrome version
-
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
-finally:
+if platform.system() == "Linux":
+    display = None
     try:
-        driver.quit()
-    except Exception:
-        pass
-    if display:
-        display.stop()
+        if Display and not Display().is_alive():
+            display = Display(visible=0, size=(1920, 1080))
+            display.start()
+
+        options = Options()
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--headless=new")
+
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+    finally:
+        try:
+            driver.quit()
+        except Exception:
+            pass
+        if display:
+            display.stop()
 
 MAX_RETRIES = 10
 RETRY_DELAY = 10
@@ -42,21 +48,21 @@ RETRY_DELAY = 10
 def element_strip(elem):
     return elem.text.strip()
 
-def format_for_reddit(answer):
-    # Use regex to find all citations in the format [number](url)
+def format_for_reddit(text):
+    """Clean up Perplexity output for Reddit."""
+    # Remove citation links [number](url) -> [[domain]](url)
     pattern = r'\[(\d+)\]\((https?://[^)]+)\)'
-    
+
     def replace_citation(match):
         url = match.group(2)
-        # Extract domain from URL
         domain = re.search(r'https?://(?:www\.)?([^/]+)', url)
         if domain:
-            domain_name = domain.group(1)
-            return f' [[{domain_name}]]({url}) '
+            return f" [[{domain.group(1)}]]({url}) "
         return match.group(0)
-    
-    formatted_text = re.sub(pattern, replace_citation, answer)
-    return formatted_text
+
+    text = re.sub(pattern, replace_citation, text)
+    text = re.sub(r'\w*\+\d+', '', text)
+    return text.strip()
     
 def get_latest_news():
     answer = ''
