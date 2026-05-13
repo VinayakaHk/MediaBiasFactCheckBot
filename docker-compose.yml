@@ -1,0 +1,83 @@
+name: mediabiasfactcheckbot
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    # No ports published by default — the bot reaches Mongo via the internal
+    # Docker network. Uncomment to access Mongo from the host for debugging:
+    # ports:
+    #   - "27017:27017"
+
+  bot:
+    build: .
+    image: mediabiasfactcheckbot:latest
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Override the MONGODB URL so it targets the compose service, not localhost.
+      MONGODB: mongodb://mongo:27017
+      PYTHONUNBUFFERED: "1"
+    # Default command is `python main.py` from the Dockerfile. Override with:
+    #   docker compose run --rm bot python auto_post_news.py
+    #   docker compose run --rm bot python weekly_discussion.py
+    #   docker compose run --rm bot python modmail_discussion.py
+
+  # Optional Flask keep-alive endpoint (only useful on platforms like Replit
+  # that need an HTTP endpoint to keep the process alive). Enable with:
+  #   docker compose --profile keepalive up
+  keepalive:
+    image: mediabiasfactcheckbot:latest
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - bot
+    env_file:
+      - .env
+    environment:
+      MONGODB: mongodb://mongo:27017
+    # keep_alive.py spawns Flask in a thread; here we run the Flask app directly
+    # on the main thread so the container stays alive.
+    command: ["python", "-c", "from keep_alive import app; app.run(host='0.0.0.0', port=8080)"]
+    ports:
+      - "8080:8080"
+    profiles: ["keepalive"]
+
+  # Optional Streamlit dashboard. There's no single dashboard entrypoint in the
+  # repo — pick one of the streamlit/mongodb_streamlit_*.py files. Enable with:
+  #   docker compose --profile dashboard up
+  streamlit:
+    image: mediabiasfactcheckbot:latest
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      MONGODB: mongodb://mongo:27017
+    command:
+      - streamlit
+      - run
+      - streamlit/mongodb_streamlit_submissions.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+    ports:
+      - "8501:8501"
+    profiles: ["dashboard"]
+
+volumes:
+  mongo-data:

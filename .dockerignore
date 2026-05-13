@@ -1,0 +1,58 @@
+# Virtualenvs / local Python installs
+.venv/
+.pythonlibs/
+venv/
+env/
+ENV/
+
+# Local MongoDB data — compose uses a dedicated volume instead
+db/
+
+# Secrets / local config — injected via docker-compose env_file at runtime
+.env
+.env.*
+!.env.example
+
+# VCS / IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+
+# Python caches & artifacts
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# OS cruft
+.DS_Store
+**/.DS_Store
+
+# Stub typings and tests — not needed at runtime
+typings/
+tests/
+
+# Large source JSON that is derived into MBFC_modified.json
+docs/MBFC.json
+
+# Docs build output, logs
+docs/_build/
+*.log
+
+# Pyinstaller artefacts
+build/
+dist/
+*.spec
+qodana.yaml
+.prettierignore
+
+# Streamlit local secrets
+streamlit/.streamlit/secrets.toml
