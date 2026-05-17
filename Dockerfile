@@ -46,10 +46,14 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install Python deps first so they cache across code changes
-COPY requirements.txt ./
+# Install Python deps first so they cache across code changes.
+# requirements-runtime.txt is a slim subset of requirements.txt that excludes
+# torch / easyocr / opencv / scikit-image / undetected-chromedriver — these are
+# only used by tests/ and add ~1 GB to the image. If you need the full deps
+# (e.g. to run something under tests/), swap this for `requirements.txt`.
+COPY requirements-runtime.txt ./
 RUN pip install --upgrade pip \
- && pip install -r requirements.txt
+ && pip install -r requirements-runtime.txt
 
 # -- App ----------------------------------------------------------------------
 # Copy the rest of the project. .dockerignore keeps .venv, db/, .env, .git, caches out.
