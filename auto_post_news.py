@@ -31,9 +31,9 @@ RSS_FEEDS = [
 
 # Articles must match at least one of these patterns in the title
 GEOPOLITICS_KEYWORDS = re.compile(
-    r"geopolit|foreign policy|diplomacy|bilateral|strategic|defence|defense|military"
-    r"|border|china|pakistan|us.india|indo.pacific|jaishankar|modi|nato|brics"
-    r"|sanctions|trade war|alliance|treaty|nuclear|missile|navy|airforce",
+    r"geopolit|foreign policy|diplomacy|bilateral|strategic"
+    r"|border|china|pakistan|us.india|indo.pacific|jaishankar|modi|brics"
+    r"|sanctions|trade war|alliance|treaty",
     re.IGNORECASE,
 )
 
