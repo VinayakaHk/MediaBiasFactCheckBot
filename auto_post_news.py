@@ -9,8 +9,11 @@ Intended to run via crontab twice daily (morning + evening).
 import os
 import re
 import random
-import platform
+import logging
+from difflib import SequenceMatcher
+from urllib.parse import urlparse
 
+import requests
 import feedparser
 import praw
 from dotenv import load_dotenv
@@ -18,6 +21,15 @@ from dotenv import load_dotenv
 from src.perplexity import query_perplexity
 
 load_dotenv()
+
+# --- Logging ---
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+log = logging.getLogger(__name__)
 
 # --- Configuration ---
 
@@ -29,7 +41,6 @@ RSS_FEEDS = [
     "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml",
 ]
 
-# Articles must match at least one of these patterns in the title
 GEOPOLITICS_KEYWORDS = re.compile(
     r"geopolit|foreign policy|diplomacy|bilateral|strategic"
     r"|border|china|pakistan|us.india|indo.pacific|jaishankar|modi|brics"
@@ -40,6 +51,8 @@ GEOPOLITICS_KEYWORDS = re.compile(
 SUBREDDIT = os.environ.get("SUBREDDIT")
 MAX_RETRIES = 5
 RETRY_DELAY = 10
+DEDUP_THRESHOLD = 0.55  # title similarity threshold for deduplication
+REDDIT_DUP_THRESHOLD = 0.55  # similarity threshold for Reddit duplicate check
 
 
 # --- Reddit ---
@@ -55,12 +68,92 @@ def initialize_reddit():
     )
 
 
+# --- Deduplication ---
+
+def title_similarity(a, b):
+    """Compute similarity ratio between two titles (0-1)."""
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
+
+def normalize_url(url):
+    """Strip query params and fragments for URL comparison."""
+    parsed = urlparse(url)
+    return f"{parsed.scheme}://{parsed.netloc}{parsed.path}".rstrip("/")
+
+
+def deduplicate_articles(articles):
+    """Remove articles covering the same story based on title similarity."""
+    if not articles:
+        return articles
+
+    unique = []
+    for article in articles:
+        is_dup = False
+        for kept in unique:
+            sim = title_similarity(article["title"], kept["title"])
+            if sim > DEDUP_THRESHOLD:
+                log.info(
+                    "Dedup: dropping '%s' (%.0f%% similar to '%s')",
+                    article["title"], sim * 100, kept["title"],
+                )
+                is_dup = True
+                break
+        if not is_dup:
+            unique.append(article)
+
+    log.info("Deduplication: %d -> %d articles", len(articles), len(unique))
+    return unique
+
+
+# --- Reddit Duplicate Check ---
+
+def fetch_recent_reddit_posts():
+    """Fetch recent posts from the subreddit via public JSON API."""
+    url = f"https://www.reddit.com/r/{SUBREDDIT}.json?limit=100"
+    headers = {"User-Agent": "AutoPostNews/1.0"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        posts = []
+        for child in data.get("data", {}).get("children", []):
+            post = child.get("data", {})
+            post_url = post.get("url_overridden_by_dest") or post.get("url", "")
+            posts.append({"title": post.get("title", ""), "url": post_url})
+        log.info("Fetched %d recent posts from r/%s", len(posts), SUBREDDIT)
+        return posts
+    except Exception as e:
+        log.warning("Failed to fetch Reddit posts: %s", e)
+        return []
+
+
+def is_already_posted(article, reddit_posts):
+    """Check if article URL or title already exists on the subreddit."""
+    article_url_norm = normalize_url(article["url"])
+
+    for post in reddit_posts:
+        # Exact URL match
+        if normalize_url(post["url"]) == article_url_norm:
+            log.info("Reddit dup (URL match): '%s'", article["title"])
+            return True
+        # Title similarity match
+        sim = title_similarity(article["title"], post["title"])
+        if sim > REDDIT_DUP_THRESHOLD:
+            log.info(
+                "Reddit dup (title %.0f%%): '%s' ~ '%s'",
+                sim * 100, article["title"], post["title"],
+            )
+            return True
+    return False
+
+
 # --- RSS Feed ---
 
 def fetch_news_article():
-    """Fetch a random recent article from RSS feeds about Indian geopolitics."""
+    """Fetch a deduplicated, non-reposted article from RSS feeds."""
     entries = []
     for feed_url in RSS_FEEDS:
+        log.info("Fetching feed: %s", feed_url)
         feed = feedparser.parse(feed_url)
         for entry in feed.entries:
             title = entry.get("title", "")
@@ -68,12 +161,27 @@ def fetch_news_article():
             if link and title and re.search(r"india", title, re.IGNORECASE) and GEOPOLITICS_KEYWORDS.search(title):
                 entries.append({"title": title, "url": link})
 
+    log.info("Found %d matching articles from RSS feeds", len(entries))
     if not entries:
-        print("No geopolitics articles found in RSS feeds.")
         return None
 
+    # Deduplicate same-story articles from different sources
+    entries = deduplicate_articles(entries)
+    if not entries:
+        return None
+
+    # Check against recent Reddit posts
+    reddit_posts = fetch_recent_reddit_posts()
     random.shuffle(entries)
-    return entries[0]
+
+    for article in entries:
+        if not is_already_posted(article, reddit_posts):
+            log.info("Selected article: '%s'", article["title"])
+            return article
+        log.info("Skipping (already on Reddit): '%s'", article["title"])
+
+    log.warning("All articles already posted on Reddit")
+    return None
 
 
 # --- Post to Reddit ---
@@ -92,34 +200,32 @@ def post_to_reddit(article, summary):
     ss_comment = f"Submission Statement: {summary}"
     submission.reply(body=ss_comment)
 
-    print(f"Posted: {submission.url}")
-    print(f"Title: {article['title']}")
+    log.info("Posted: %s", submission.url)
+    log.info("Title: %s", article["title"])
     return submission
 
 
 # --- Main ---
 
 def main():
-    print("Fetching news article...")
+    log.info("=== Auto Post News started ===")
+
     article = fetch_news_article()
     if not article:
-        print("No suitable article found. Exiting.")
+        log.warning("No suitable article found. Exiting.")
         return
 
-    print(f"Found: {article['title']}")
-    print(f"URL: {article['url']}")
-
-    print("Summarizing with Perplexity...")
+    log.info("Summarizing with Perplexity: %s", article["url"])
     summary = query_perplexity(
         f"Summarize this news article in 2-3 paragraphs for a geopolitics discussion forum: {article['title']} {article['url']} \n\n Make sure to include key facts, context, and implications. Avoid opinions or analysis. Focus on the who, what, when, where, and why. Donot ask any follow up questions."
     )
     if not summary or len(summary) < 160:
-        print("Failed to get summary or summary too short. Exiting.")
+        log.error("Failed to get summary or summary too short. Exiting.")
         return
 
-    print("Posting to Reddit...")
+    log.info("Posting to Reddit...")
     post_to_reddit(article, summary)
-    print("Done.")
+    log.info("=== Done ===")
 
 
 if __name__ == "__main__":
