@@ -22,17 +22,18 @@ load_dotenv()
 # --- Configuration ---
 
 RSS_FEEDS = [
+    "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml",
+    "https://www.theguardian.com/world/india/rss",
     "https://www.thehindu.com/news/international/feeder/default.rss",
-    "https://www.thehindu.com/news/national/feeder/default.rss",
-    "https://indianexpress.com/section/india/feed/",
-    "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms",  # TOI World
+    "https://www.firstpost.com/commonfeeds/v1/mfp/rss/world.xml",
+    "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms",  
     "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml",
 ]
 
 # Articles must match at least one of these patterns in the title
 GEOPOLITICS_KEYWORDS = re.compile(
     r"geopolit|foreign policy|diplomacy|bilateral|strategic"
-    r"|border|china|pakistan|us.india|indo.pacific|jaishankar|modi|brics"
+    r"|border|china|pakistan|us.india|indo.pacific|jaishankar|modi|brics|quad"
     r"|sanctions|trade war|alliance|treaty",
     re.IGNORECASE,
 )
