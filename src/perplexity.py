@@ -18,7 +18,7 @@ RETRY_DELAY = 10
 
 GECKODRIVER_PATH = {
     "Darwin": "/opt/homebrew/bin/geckodriver",
-    "Linux": "/usr/local/bin/geckodriver",
+    "Linux": "/snap/bin/geckodriver" if platform.machine() in ("x86_64", "AMD64") else "/usr/local/bin/geckodriver",
 }
 
 
