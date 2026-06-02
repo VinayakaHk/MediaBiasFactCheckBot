@@ -13,7 +13,6 @@ import logging
 from difflib import SequenceMatcher
 from urllib.parse import urlparse
 
-import requests
 import feedparser
 import praw
 from dotenv import load_dotenv
@@ -109,19 +108,15 @@ def deduplicate_articles(articles):
 # --- Reddit Duplicate Check ---
 
 def fetch_recent_reddit_posts():
-    """Fetch recent posts from the subreddit via public JSON API."""
-    url = f"https://www.reddit.com/r/{SUBREDDIT}.json?limit=100"
-    headers = {"User-Agent": "AutoPostNews/1.0"}
+    """Fetch recent posts from the subreddit using PRAW (new listing)."""
     try:
-        resp = requests.get(url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
+        reddit = initialize_reddit()
+        subreddit = reddit.subreddit(SUBREDDIT)
         posts = []
-        for child in data.get("data", {}).get("children", []):
-            post = child.get("data", {})
-            post_url = post.get("url_overridden_by_dest") or post.get("url", "")
-            posts.append({"title": post.get("title", ""), "url": post_url})
-        log.info("Fetched %d recent posts from r/%s", len(posts), SUBREDDIT)
+        for post in subreddit.new(limit=200):
+            post_url = getattr(post, "url_overridden_by_dest", None) or post.url
+            posts.append({"title": post.title, "url": post_url})
+        log.info("Fetched %d recent posts from r/%s (new)", len(posts), SUBREDDIT)
         return posts
     except Exception as e:
         log.warning("Failed to fetch Reddit posts: %s", e)
