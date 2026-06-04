@@ -41,10 +41,26 @@ RSS_FEEDS = [
     "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml",
 ]
 
+INDIA_PATTERN = re.compile(r"\bindia\b|indian|modi|jaishankar|new delhi", re.IGNORECASE)
+
 GEOPOLITICS_KEYWORDS = re.compile(
-    r"geopolit|foreign policy|diplomacy|bilateral|strategic"
-    r"|border|china|pakistan|us.india|indo.pacific|jaishankar|modi|brics|quad"
-    r"|sanctions|trade war|alliance|treaty",
+    r"geopolit|foreign policy|diplomacy|bilateral"
+    r"|china|pakistan|united states|america|\bus\b.*(tariff|trade|deal|sanction)"
+    r"|indo.pacific|brics|quad"
+    r"|sanctions|trade war|tariff|alliance|treaty|summit"
+    r"|military|defence|defense|nuclear|missile|drone"
+    r"|iran|gulf|strait|lng"
+    r"|border.*(dispute|tension|clash|standoff)"
+    r"|war|ceasefire|conflict",
+    re.IGNORECASE,
+)
+
+EXCLUDE_PATTERN = re.compile(
+    r"cricket|ipl|bbl|football|fifa|messi|sport"
+    r"|bollywood|film|movie|music|grammy"
+    r"|heat.?wave|temperature|weather|flood"
+    r"|electric.car|gig.worker|startup|ipo"
+    r"|murder|rape|killed.in.crash|deportation|arrested|charged.in.death",
     re.IGNORECASE,
 )
 
@@ -154,7 +170,7 @@ def fetch_news_article():
         for entry in feed.entries:
             title = entry.get("title", "")
             link = entry.get("link", "")
-            if link and title and re.search(r"india", title, re.IGNORECASE) and GEOPOLITICS_KEYWORDS.search(title):
+            if link and title and INDIA_PATTERN.search(title) and GEOPOLITICS_KEYWORDS.search(title) and not EXCLUDE_PATTERN.search(title):
                 entries.append({"title": title, "url": link})
 
     log.info("Found %d matching articles from RSS feeds", len(entries))
