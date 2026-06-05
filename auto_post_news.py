@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 import feedparser
 import praw
 from dotenv import load_dotenv
+from googlenewsdecoder import new_decoderv1
 
 from src.perplexity import query_perplexity
 
@@ -71,6 +72,19 @@ MAX_RETRIES = 5
 RETRY_DELAY = 10
 DEDUP_THRESHOLD = 0.55  # title similarity threshold for deduplication
 REDDIT_DUP_THRESHOLD = 0.55  # similarity threshold for Reddit duplicate check
+
+
+def decode_google_news_url(url):
+    """Resolve Google News redirect URL to the original article URL."""
+    if "news.google.com" not in url:
+        return url
+    try:
+        result = new_decoderv1(url)
+        if result.get("status"):
+            return result["decoded_url"]
+    except Exception as e:
+        log.warning("Failed to decode Google News URL: %s", e)
+    return url
 
 
 # --- Reddit ---
@@ -173,7 +187,7 @@ def fetch_news_article():
             title = entry.get("title", "")
             link = entry.get("link", "")
             if link and title and INDIA_PATTERN.search(title) and GEOPOLITICS_KEYWORDS.search(title) and not EXCLUDE_PATTERN.search(title):
-                entries.append({"title": title, "url": link})
+                entries.append({"title": title, "url": decode_google_news_url(link)})
 
     log.info("Found %d matching articles from RSS feeds", len(entries))
     if not entries:

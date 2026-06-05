@@ -1,5 +1,18 @@
 import re
 import feedparser
+from googlenewsdecoder import new_decoderv1
+
+
+def decode_google_news_url(url):
+    if "news.google.com" not in url:
+        return url
+    try:
+        result = new_decoderv1(url)
+        if result.get("status"):
+            return result["decoded_url"]
+    except Exception:
+        pass
+    return url
 
 RSS_FEEDS = [
     "https://feeds.bbci.co.uk/news/world/asia/india/rss.xml",
@@ -52,7 +65,7 @@ for url in RSS_FEEDS:
     feed = feedparser.parse(url)
     for i, e in enumerate(feed.entries, 1):
         title = e.get("title", "")
-        link = e.get("link", "")
+        link = decode_google_news_url(e.get("link", ""))
         print(f"  {i}. {title} | {link}")
         all_entries.append({"title": title, "url": link})
 
