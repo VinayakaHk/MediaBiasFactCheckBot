@@ -39,6 +39,7 @@ RSS_FEEDS = [
     "https://www.firstpost.com/commonfeeds/v1/mfp/rss/world.xml",
     "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms",  
     "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml",
+    "https://news.google.com/rss/search?q=site:https://theprint.in/category/diplomacy/&hl=en-US&gl=US&ceid=US%3Aen",
 ]
 
 INDIA_PATTERN = re.compile(r"\bindia\b|indian|modi|jaishankar|new delhi", re.IGNORECASE)
