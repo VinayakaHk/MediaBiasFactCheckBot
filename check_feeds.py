@@ -9,6 +9,7 @@ RSS_FEEDS = [
     "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms",
     "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml",
     "https://news.google.com/rss/search?q=site:https://theprint.in/category/diplomacy/&hl=en-US&gl=US&ceid=US%3Aen",
+    "https://news.google.com/rss/search?q=site:https://www.reuters.com/world/india/&hl=en-IN&gl=IN&ceid=IN:en",
 ]
 
 # Option A: India-relational compound patterns
