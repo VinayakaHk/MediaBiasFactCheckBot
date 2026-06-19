@@ -72,23 +72,35 @@ RSS_FEEDS = [
 INDIA_PATTERN = re.compile(r"\bindia\b|indian|modi|jaishankar|new delhi", re.IGNORECASE)
 
 GEOPOLITICS_KEYWORDS = re.compile(
-    r"geopolit|foreign policy|diplomacy|bilateral"
-    r"|china|pakistan|united states|america|\bus\b.*(tariff|trade|deal|sanction)"
+    r"geopolit|foreign policy|diplomacy|diplomatic|bilateral"
+    r"|china|pakistan|united states|america|\bus\b.*(tariff|trade|sanction|strike)"
     r"|indo.pacific|brics|quad"
     r"|sanctions|trade war|tariff|alliance|treaty|summit"
-    r"|military|defence|defense|nuclear|missile|drone"
-    r"|iran|gulf|strait|lng"
+    r"|military|defence cooperation|defense pact|nuclear|missile|drone strike"
+    r"|iran|strait of hormuz|lng export"
     r"|border.*(dispute|tension|clash|standoff)"
-    r"|war|ceasefire|conflict",
+    r"|ceasefire|armed conflict|invasion"
+    r"|nato|asean|sco|g7|g20|un general assembly"
+    r"|embassy|diplomat|extradition|territorial"
+    r"|trump|biden|xi jinping|putin"
+    r"|state visit|diplomatic.*(row|protest|ties|rift)"
+    r"|seafarer|sailor.*(kill|attack|gulf)",
     re.IGNORECASE,
 )
 
 EXCLUDE_PATTERN = re.compile(
-    r"cricket|ipl|bbl|football|fifa|messi|sport"
+    r"cricket|\bipl\b|bbl|football|fifa|messi|sport"
     r"|bollywood|film|movie|music|grammy"
     r"|heat.?wave|temperature|weather|flood"
     r"|electric.car|gig.worker|startup|ipo"
-    r"|murder|rape|killed.in.crash|deportation|arrested|charged.in.death",
+    r"|murder|rape|killed.in.crash|deportation|arrested|charged.in.death"
+    r"|stock.*(crash|rally|surge|slip|climb|fall|drop)|shares.*(climb|fall|rally|drop|surge)"
+    r"|sensex|nifty|bse|nse|brokerage|infosys|tcs|wipro|hcl.tech"
+    r"|iphone|android|smartphone|gadget"
+    r"|school|college|exam|jee|neet|upsc"
+    r"|railway|metro|highway|road.project"
+    r"|pollution|waste|water.quality|sewage"
+    r"|rupee|forex|currency.*(rise|fall|rebound|slip)",
     re.IGNORECASE,
 )
 
