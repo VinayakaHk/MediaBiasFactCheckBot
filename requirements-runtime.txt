@@ -9,27 +9,28 @@
 # use the full requirements.txt instead.
 
 # --- Reddit -----------------------------------------------------------------
-praw==7.8.1
-prawcore==2.4.0
-update-checker==0.18.0
+praw==8.0.1
+prawcore==4.0.0
+update-checker==1.0.0
+defusedxml==0.7.1
 websocket-client==1.9.0
 
 # --- HTTP / requests --------------------------------------------------------
-requests==2.32.5
-charset-normalizer==3.4.4
-idna==3.11
-urllib3==2.6.3
-certifi==2026.1.4
+requests==2.34.2
+charset-normalizer==3.4.7
+idna==3.18
+urllib3==2.7.0
+certifi==2026.5.20
 
 # --- Config / env -----------------------------------------------------------
-python-dotenv==1.2.1
+python-dotenv==1.2.2
 
 # --- MongoDB ----------------------------------------------------------------
-pymongo==4.16.0
+pymongo==4.17.0
 dnspython==2.8.0
 
 # --- Selenium stack (Firefox + geckodriver scraping in src/perplexity.py) ---
-selenium==4.41.0
+selenium==4.44.0
 trio==0.33.0
 trio-websocket==0.12.2
 wsproto==1.3.2
@@ -37,13 +38,13 @@ h11==0.16.0
 outcome==1.3.0.post0
 sniffio==1.3.1
 sortedcontainers==2.4.0
-attrs==25.4.0
+attrs==26.1.0
 PySocks==1.7.1
 
 # --- Markdown conversion (Perplexity output -> Reddit markdown) -------------
 markdownify==1.2.2
-beautifulsoup4==4.14.3
-soupsieve==2.8.3
+beautifulsoup4==4.15.0
+soupsieve==2.8.4
 six==1.17.0
 
 # --- PyVirtualDisplay path in src/llm_automation.py (guarded by arch check) -
@@ -52,15 +53,15 @@ PyVirtualDisplay==3.0
 # --- Flask keep_alive.py (optional keepalive service) -----------------------
 Flask==3.1.3
 blinker==1.9.0
-click==8.3.1
+click==8.4.1
 itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==3.0.3
-Werkzeug==3.1.6
+Werkzeug==3.1.8
 
 # --- RSS parsing in auto_post_news.py (missing from requirements.txt!) ------
-feedparser==6.0.11
+feedparser==6.0.12
 
 # --- Misc -------------------------------------------------------------------
-packaging==26.0
+packaging==26.2
 typing_extensions==4.15.0

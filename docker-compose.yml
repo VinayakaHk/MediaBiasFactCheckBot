@@ -1,11 +1,15 @@
 name: mediabiasfactcheckbot
 
-# This stack assumes a separately managed MongoDB is reachable on the Docker
-# host's port 27017 (e.g. a stand-alone `mongodb` container that publishes
-# 27017:27017). The bot reaches it via host.docker.internal, which we map to
-# the host gateway with `extra_hosts` (required on Linux).
-
 services:
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mediabiasfactcheckbot-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - "27017:27017"
+
   bot:
     build: .
     image: mediabiasfactcheckbot:latest
@@ -13,19 +17,11 @@ services:
     env_file:
       - .env
     environment:
-      # Override the MONGODB URL so the bot connects to the host-published
-      # mongo, not localhost (which would be the container itself).
-      MONGODB: mongodb://host.docker.internal:27017
+      MONGODB: mongodb://mongodb:27017
       PYTHONUNBUFFERED: "1"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    # Default command is `python main.py` from the Dockerfile. Override with:
-    #   docker compose run --rm bot python auto_post_news.py
-    #   docker compose run --rm bot python weekly_discussion.py
-    #   docker compose run --rm bot python modmail_discussion.py
+    depends_on:
+      - mongodb
 
-  # Optional Flask keep-alive endpoint. Enable with:
-  #   docker compose --profile keepalive up
   keepalive:
     image: mediabiasfactcheckbot:latest
     build: .
@@ -33,22 +29,14 @@ services:
     env_file:
       - .env
     environment:
-      MONGODB: mongodb://host.docker.internal:27017
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    # keep_alive.py spawns Flask in a thread; here we run the Flask app directly
-    # on the main thread so the container stays alive.
+      MONGODB: mongodb://mongodb:27017
     command: ["python", "-c", "from keep_alive import app; app.run(host='0.0.0.0', port=8080)"]
     ports:
       - "8080:8080"
+    depends_on:
+      - mongodb
     profiles: ["keepalive"]
 
-  # Optional Streamlit dashboard. There's no single dashboard entrypoint in
-  # the repo — pick one of the streamlit/mongodb_streamlit_*.py files. The
-  # slim runtime image does NOT include streamlit/pandas/matplotlib; if you
-  # want this service, install those into the image first or use a separate
-  # Dockerfile. Enable with:
-  #   docker compose --profile dashboard up
   streamlit:
     image: mediabiasfactcheckbot:latest
     build: .
@@ -56,9 +44,7 @@ services:
     env_file:
       - .env
     environment:
-      MONGODB: mongodb://host.docker.internal:27017
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      MONGODB: mongodb://mongodb:27017
     command:
       - streamlit
       - run
@@ -67,4 +53,10 @@ services:
       - --server.port=8501
     ports:
       - "8501:8501"
+    depends_on:
+      - mongodb
     profiles: ["dashboard"]
+
+volumes:
+  mongodb-data:
+    name: mediabiasfactcheckbot_mongodb-data

@@ -223,16 +223,18 @@ def filter_already_posted(articles, reddit_posts):
 def fetch_news_article():
     """Fetch a deduplicated, non-reposted article from RSS feeds."""
     entries = []
+    total_entries = 0
     for feed_url in RSS_FEEDS:
         log.info(f"{DIM}Fetching: {feed_url[:70]}...{RESET}")
         feed = feedparser.parse(feed_url)
+        total_entries += len(feed.entries)
         for entry in feed.entries:
             title = entry.get("title", "")
             link = entry.get("link", "")
             if link and title and INDIA_PATTERN.search(title) and GEOPOLITICS_KEYWORDS.search(title) and not EXCLUDE_PATTERN.search(title):
                 entries.append({"title": title, "url": decode_google_news_url(link)})
 
-    log.info(f"{BLUE}Found {len(entries)} matching articles from RSS feeds{RESET}")
+    log.info(f"{BLUE}RSS total: {total_entries} entries → {len(entries)} after filtering{RESET}")
     if not entries:
         return None
 
