@@ -253,6 +253,7 @@ def fetch_news_article():
 
     random.shuffle(entries)
     selected = entries[0]
+    selected["_candidates"] = entries
     log.info(f"{GREEN}{BOLD}Selected: \"{selected['title']}\"{RESET}")
     return selected
 
@@ -279,14 +280,24 @@ def post_to_reddit(article, summary):
 
 # --- Main ---
 
-def main():
+def main(dry_run=False):
     log.info(f"{BOLD}{'═' * 50}{RESET}")
-    log.info(f"{BOLD}  Auto Post News{RESET}")
+    log.info(f"{BOLD}  Auto Post News{' (DRY RUN)' if dry_run else ''}{RESET}")
     log.info(f"{BOLD}{'═' * 50}{RESET}")
 
     article = fetch_news_article()
     if not article:
         log.warning("No suitable article found. Exiting.")
+        return
+
+    if dry_run:
+        log.info(f"{GREEN}{BOLD}Dry run complete. Would post: \"{article['title']}\"{RESET}")
+        log.info(f"{DIM}  URL: {article['url']}{RESET}")
+        if article.get("_candidates"):
+            log.info(f"{CYAN}All {len(article['_candidates'])} candidates:{RESET}")
+            for i, c in enumerate(article["_candidates"], 1):
+                log.info(f"  {i}. {c['title']}")
+                log.info(f"     {DIM}{c['url']}{RESET}")
         return
 
     log.info(f"{BLUE}Summarizing: {article['url']}{RESET}")
@@ -303,4 +314,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true", help="Only fetch feeds, filter, and check Reddit duplicates — no summarizing or posting")
+    args = parser.parse_args()
+    main(dry_run=args.dry_run)
