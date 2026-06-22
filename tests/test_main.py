@@ -11,6 +11,7 @@ from main import retry_sweep, SWEEP_INTERVAL, STALE_THRESHOLD
 
 
 class TestRetrySweep:
+    @patch("main.SWEEP_INTERVAL", 0)
     @patch("main.get_stale_awaiting_ss")
     def test_no_stale_submissions(self, mock_stale):
         stop = threading.Event()
@@ -23,6 +24,7 @@ class TestRetrySweep:
         retry_sweep(MagicMock(), stop)
         mock_stale.assert_called_once()
 
+    @patch("main.SWEEP_INTERVAL", 0)
     @patch("main.approve_submission")
     @patch("main.transition_to_approved", return_value=True)
     @patch("main.is_valid_submission_statement", return_value=True)
@@ -56,6 +58,7 @@ class TestRetrySweep:
         retry_sweep(reddit, stop)
         mock_transition.assert_called_once()
 
+    @patch("main.SWEEP_INTERVAL", 0)
     @patch("main.transition_to_approved")
     @patch("main.get_stale_awaiting_ss")
     def test_skips_already_approved_submission(self, mock_stale, mock_transition):
