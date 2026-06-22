@@ -22,7 +22,7 @@ Standalone script to auto-post Indian geopolitics news to Reddit.
 - Firstpost World: `https://www.firstpost.com/commonfeeds/v1/mfp/rss/world.xml`
 - Times of India: `https://timesofindia.indiatimes.com/rssfeeds/1898055.cms`
 - Hindustan Times World: `https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml`
-- ThePrint Diplomacy (via Google News): `https://news.google.com/rss/search?q=site:https://theprint.in/category/diplomacy/`
+- ThePrint Diplomacy (via Google News): `https://news.google.com/rss/search?q=site:theprint.in/diplomacy`
 - Reuters India (via Google News): `https://news.google.com/rss/search?q=site:https://www.reuters.com/world/india/`
 
 Google News redirect URLs are automatically decoded to original article URLs using `googlenewsdecoder`.

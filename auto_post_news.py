@@ -65,7 +65,7 @@ RSS_FEEDS = [
     "https://www.firstpost.com/commonfeeds/v1/mfp/rss/world.xml",
     "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms",
     "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml",
-    "https://news.google.com/rss/search?q=site:https://theprint.in/category/diplomacy/&hl=en-US&gl=US&ceid=US%3Aen",
+    "https://news.google.com/rss/search?q=site:theprint.in/diplomacy&hl=en-IN&gl=IN&ceid=IN:en",
     "https://news.google.com/rss/search?q=site:https://www.reuters.com/world/india/&hl=en-IN&gl=IN&ceid=IN:en",
 ]
 
@@ -233,12 +233,16 @@ def fetch_news_article():
             link = entry.get("link", "")
             if not link or not title:
                 continue
-            resolved_url = decode_google_news_url(link)
-            # ThePrint articles bypass regex filtering
-            if "theprint.in" in resolved_url:
-                entries.append({"title": title, "url": resolved_url})
-            elif INDIA_PATTERN.search(title) and GEOPOLITICS_KEYWORDS.search(title) and not EXCLUDE_PATTERN.search(title):
-                entries.append({"title": title, "url": resolved_url})
+            if INDIA_PATTERN.search(title) and GEOPOLITICS_KEYWORDS.search(title) and not EXCLUDE_PATTERN.search(title):
+                entries.append({"title": title, "url": link, "_needs_decode": "news.google.com" in link})
+
+    # Decode Google News URLs only for articles that passed filtering
+    needs_decode = [a for a in entries if a.get("_needs_decode")]
+    if needs_decode:
+        log.info(f"{BLUE}Decoding {len(needs_decode)} Google News URLs...{RESET}")
+    for article in entries:
+        if article.pop("_needs_decode", False):
+            article["url"] = decode_google_news_url(article["url"])
 
     log.info(f"{BLUE}RSS total: {total_entries} entries → {len(entries)} after filtering{RESET}")
     if not entries:

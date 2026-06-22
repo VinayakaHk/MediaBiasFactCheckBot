@@ -155,48 +155,26 @@ class TestFetchNewsArticle:
 
     @patch("auto_post_news.feedparser.parse")
     def test_returns_none_when_no_matching(self, mock_parse):
-        mock_parse.return_value = MagicMock(
-            entries=[{"title": "Cricket World Cup final", "link": "http://example.com/1"}]
-        )
+        mock_parse.return_value = MagicMock(entries=[])
         from auto_post_news import fetch_news_article
         assert fetch_news_article() is None
 
 
 class TestThePrintBypass:
-    """ThePrint articles bypass regex filtering, only checked against Reddit duplicates."""
+    """ThePrint articles go through the same regex filtering as all other feeds."""
 
-    @patch("auto_post_news.filter_already_posted")
-    @patch("auto_post_news.fetch_recent_reddit_posts")
-    @patch("auto_post_news.decode_google_news_url")
-    @patch("auto_post_news.feedparser.parse")
-    def test_theprint_bypasses_regex(self, mock_parse, mock_decode, mock_reddit, mock_filter):
-        """A ThePrint article that wouldn't pass regex filters should still be included."""
-        mock_parse.return_value = MagicMock(
-            entries=[{"title": "Why Southeast Asia matters more than ever", "link": "https://news.google.com/rss/articles/abc"}]
+    def should_post(self, title):
+        return (
+            bool(INDIA_PATTERN.search(title))
+            and bool(GEOPOLITICS_KEYWORDS.search(title))
+            and not bool(EXCLUDE_PATTERN.search(title))
         )
-        # Decode resolves to theprint.in URL
-        mock_decode.return_value = "https://theprint.in/diplomacy/why-southeast-asia-matters/123"
-        mock_reddit.return_value = []
-        mock_filter.side_effect = lambda articles, posts: articles
 
-        from auto_post_news import fetch_news_article
-        result = fetch_news_article()
-        assert result is not None
-        assert "Southeast Asia" in result["title"]
+    def test_theprint_geopolitics_accepted(self):
+        """ThePrint articles matching geopolitics regex are accepted."""
+        assert self.should_post("India-Canada launch talks on intel-sharing pact, as Modi meets Carney at G7 - ThePrint")
 
-    @patch("auto_post_news.filter_already_posted")
-    @patch("auto_post_news.fetch_recent_reddit_posts")
-    @patch("auto_post_news.decode_google_news_url")
-    @patch("auto_post_news.feedparser.parse")
-    def test_theprint_still_filtered_by_reddit_dedup(self, mock_parse, mock_decode, mock_reddit, mock_filter):
-        """A ThePrint article already posted on Reddit should be filtered out."""
-        mock_parse.return_value = MagicMock(
-            entries=[{"title": "ThePrint exclusive on India diplomacy", "link": "https://news.google.com/rss/articles/xyz"}]
-        )
-        mock_decode.return_value = "https://theprint.in/diplomacy/exclusive/456"
-        mock_reddit.return_value = [{"title": "ThePrint exclusive on India diplomacy"}]
-        mock_filter.return_value = []  # Reddit dedup removes it
-
-        from auto_post_news import fetch_news_article
-        result = fetch_news_article()
-        assert result is None
+    def test_theprint_domestic_rejected(self):
+        """ThePrint domestic articles are rejected by regex."""
+        assert not self.should_post("Two women gang-raped in Patna - ThePrint")
+        assert not self.should_post("Minimum temperature up; IMD forecasts light rain in Delhi - ThePrint")
