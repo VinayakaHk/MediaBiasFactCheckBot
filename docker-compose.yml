@@ -22,21 +22,6 @@ services:
     depends_on:
       - mongodb
 
-  keepalive:
-    image: mediabiasfactcheckbot:latest
-    build: .
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      MONGODB: mongodb://mongodb:27017
-    command: ["python", "-c", "from keep_alive import app; app.run(host='0.0.0.0', port=8080)"]
-    ports:
-      - "8080:8080"
-    depends_on:
-      - mongodb
-    profiles: ["keepalive"]
-
   streamlit:
     image: mediabiasfactcheckbot:latest
     build: .
