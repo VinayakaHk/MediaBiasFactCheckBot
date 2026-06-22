@@ -231,8 +231,14 @@ def fetch_news_article():
         for entry in feed.entries:
             title = entry.get("title", "")
             link = entry.get("link", "")
-            if link and title and INDIA_PATTERN.search(title) and GEOPOLITICS_KEYWORDS.search(title) and not EXCLUDE_PATTERN.search(title):
-                entries.append({"title": title, "url": decode_google_news_url(link)})
+            if not link or not title:
+                continue
+            resolved_url = decode_google_news_url(link)
+            # ThePrint articles bypass regex filtering
+            if "theprint.in" in resolved_url:
+                entries.append({"title": title, "url": resolved_url})
+            elif INDIA_PATTERN.search(title) and GEOPOLITICS_KEYWORDS.search(title) and not EXCLUDE_PATTERN.search(title):
+                entries.append({"title": title, "url": resolved_url})
 
     log.info(f"{BLUE}RSS total: {total_entries} entries → {len(entries)} after filtering{RESET}")
     if not entries:

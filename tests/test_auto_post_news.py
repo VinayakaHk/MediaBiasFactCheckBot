@@ -160,3 +160,43 @@ class TestFetchNewsArticle:
         )
         from auto_post_news import fetch_news_article
         assert fetch_news_article() is None
+
+
+class TestThePrintBypass:
+    """ThePrint articles bypass regex filtering, only checked against Reddit duplicates."""
+
+    @patch("auto_post_news.filter_already_posted")
+    @patch("auto_post_news.fetch_recent_reddit_posts")
+    @patch("auto_post_news.decode_google_news_url")
+    @patch("auto_post_news.feedparser.parse")
+    def test_theprint_bypasses_regex(self, mock_parse, mock_decode, mock_reddit, mock_filter):
+        """A ThePrint article that wouldn't pass regex filters should still be included."""
+        mock_parse.return_value = MagicMock(
+            entries=[{"title": "Why Southeast Asia matters more than ever", "link": "https://news.google.com/rss/articles/abc"}]
+        )
+        # Decode resolves to theprint.in URL
+        mock_decode.return_value = "https://theprint.in/diplomacy/why-southeast-asia-matters/123"
+        mock_reddit.return_value = []
+        mock_filter.side_effect = lambda articles, posts: articles
+
+        from auto_post_news import fetch_news_article
+        result = fetch_news_article()
+        assert result is not None
+        assert "Southeast Asia" in result["title"]
+
+    @patch("auto_post_news.filter_already_posted")
+    @patch("auto_post_news.fetch_recent_reddit_posts")
+    @patch("auto_post_news.decode_google_news_url")
+    @patch("auto_post_news.feedparser.parse")
+    def test_theprint_still_filtered_by_reddit_dedup(self, mock_parse, mock_decode, mock_reddit, mock_filter):
+        """A ThePrint article already posted on Reddit should be filtered out."""
+        mock_parse.return_value = MagicMock(
+            entries=[{"title": "ThePrint exclusive on India diplomacy", "link": "https://news.google.com/rss/articles/xyz"}]
+        )
+        mock_decode.return_value = "https://theprint.in/diplomacy/exclusive/456"
+        mock_reddit.return_value = [{"title": "ThePrint exclusive on India diplomacy"}]
+        mock_filter.return_value = []  # Reddit dedup removes it
+
+        from auto_post_news import fetch_news_article
+        result = fetch_news_article()
+        assert result is None

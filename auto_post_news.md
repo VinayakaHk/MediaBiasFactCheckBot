@@ -4,7 +4,7 @@ Standalone script to auto-post Indian geopolitics news to Reddit.
 
 ## Overview
 
-1. Fetches articles from multiple RSS feeds (BBC, Guardian, The Hindu, Firstpost, TOI, Hindustan Times).
+1. Fetches articles from multiple RSS feeds (BBC, Guardian, The Hindu, Firstpost, TOI, Hindustan Times, ThePrint, Reuters).
 2. Filters articles using a 3-step regex system:
    - **INDIA_PATTERN**: Must mention India/Indian/Modi/Jaishankar/New Delhi.
    - **GEOPOLITICS_KEYWORDS**: Must match geopolitics terms (diplomacy, tariff, war, etc.).
@@ -22,6 +22,10 @@ Standalone script to auto-post Indian geopolitics news to Reddit.
 - Firstpost World: `https://www.firstpost.com/commonfeeds/v1/mfp/rss/world.xml`
 - Times of India: `https://timesofindia.indiatimes.com/rssfeeds/1898055.cms`
 - Hindustan Times World: `https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml`
+- ThePrint Diplomacy (via Google News): `https://news.google.com/rss/search?q=site:https://theprint.in/category/diplomacy/`
+- Reuters India (via Google News): `https://news.google.com/rss/search?q=site:https://www.reuters.com/world/india/`
+
+Google News redirect URLs are automatically decoded to original article URLs using `googlenewsdecoder`.
 
 ## Dependencies
 
@@ -29,6 +33,7 @@ Standalone script to auto-post Indian geopolitics news to Reddit.
 feedparser
 praw
 python-dotenv
+googlenewsdecoder
 ```
 
 Also requires `src/perplexity.py` (Perplexity AI query module).
@@ -44,13 +49,18 @@ Uses the same `.env` as the main bot:
 Matches: `india`, `indian`, `modi`, `jaishankar`, `new delhi`
 
 ### GEOPOLITICS_KEYWORDS (title must match)
-- Diplomacy: geopolitics, foreign policy, diplomacy, bilateral
-- Countries: china, pakistan, united states, america, US (only with tariff/trade/deal/sanction)
+- Diplomacy: geopolitics, foreign policy, diplomacy, diplomatic, bilateral
+- Countries: china, pakistan, united states, america, US (only with tariff/trade/sanction/strike)
 - Groupings: indo-pacific, brics, quad
 - Trade: sanctions, trade war, tariff, alliance, treaty, summit
-- Security: military, defence, defense, nuclear, missile, drone
-- Energy/Middle East: iran, gulf, strait, lng
-- Conflict: border (with dispute/tension/clash/standoff), war, ceasefire, conflict
+- Security: military, defence cooperation, defense pact, nuclear, missile, drone strike
+- Energy/Middle East: iran, strait of hormuz, lng export
+- Conflict: border (with dispute/tension/clash/standoff), ceasefire, armed conflict, invasion
+- Organizations: nato, asean, sco, g7, g20, un general assembly
+- Diplomatic terms: embassy, diplomat, extradition, territorial
+- Leaders: trump, biden, xi jinping, putin
+- Events: state visit, diplomatic (row/protest/ties/rift)
+- Maritime: seafarer/sailor (with kill/attack/gulf)
 
 ### EXCLUDE_PATTERN (title must NOT match)
 - Sports: cricket, ipl, bbl, football, fifa, messi, sport
@@ -58,6 +68,12 @@ Matches: `india`, `indian`, `modi`, `jaishankar`, `new delhi`
 - Weather: heatwave, temperature, weather, flood
 - Domestic/Tech: electric car, gig worker, startup, ipo
 - Crime: murder, rape, killed in crash, deportation, arrested, charged in death
+- Stocks/Finance: stock (crash/rally/surge/slip/fall/drop), shares (climb/fall/rally/drop/surge), sensex, nifty, bse, nse, brokerage, infosys, tcs, wipro, hcl tech
+- Gadgets: iphone, android, smartphone, gadget
+- Education: school, college, exam, jee, neet, upsc
+- Infrastructure: railway, metro, highway, road project
+- Environment: pollution, waste, water quality, sewage
+- Currency: rupee, forex, currency (rise/fall/rebound/slip)
 
 ## Deduplication
 
@@ -82,4 +98,12 @@ Add:
 
 ```bash
 python auto_post_news.py
+```
+
+### Dry Run
+
+Test filtering and deduplication without summarizing or posting:
+
+```bash
+python auto_post_news.py --dry-run
 ```
