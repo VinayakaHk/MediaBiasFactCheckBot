@@ -1,18 +1,13 @@
-from pymongo.errors import ConnectionFailure, PyMongoError
 from pymongo.mongo_client import MongoClient
 from pymongo import IndexModel, DESCENDING
 from pymongo.errors import OperationFailure
 
-from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 
 import os
 import sys
 import linecache
 import time
-import praw
-import certifi
-import ssl
 load_dotenv()
 
 
@@ -49,10 +44,10 @@ def store_llm_in_comments(reason , comment_id):
         global db
         comments_collection = db['comments']
 
-        comment = comments_collection.update_one(
+        comments_collection.update_one(
             {"comment_id": comment_id}, {"$set": {'ai_removal_reason' : reason} }
         )
-    except Exception as e:
+    except Exception:
         PrintException()
 
 
@@ -70,7 +65,7 @@ def comment_body(comment_id):
         global db
         comments_collection = db['comments']
         comment = comments_collection.find_one({'comment_id': comment_id})
-        if (comment == None or (comment['link_id'] == comment['parent_id'])):
+        if (comment is None or (comment['link_id'] == comment['parent_id'])):
             return None
 
         split_parts = comment['parent_id'].split('_')
@@ -79,14 +74,14 @@ def comment_body(comment_id):
             parent_id = split_parts[1]
         else:
             return None
-        if parent_id == None:
+        if parent_id is None:
             return None
         parent_comment = comments_collection.find_one(
             {'comment_id': parent_id})
-        if (parent_comment == None):
+        if (parent_comment is None):
             return None
         return parent_comment['body']
-    except Exception as e:
+    except Exception:
         PrintException()
 
 
@@ -106,7 +101,7 @@ def store_submission_in_mongo(submission):
         submissions_collection = db['submissions']
         if_submission = submissions_collection.find_one(
             {'submission_id': submission.id})
-        if (if_submission == None):
+        if (if_submission is None):
             submissions_collection.insert_one({
                 'author': str(submission.author),
                 'created': str(submission.created),
@@ -130,7 +125,7 @@ def store_submission_in_mongo(submission):
             })
         else:
             print('Submission Exists in mongodb')
-    except Exception as e:
+    except Exception:
         PrintException()
 
 
@@ -148,7 +143,7 @@ def store_comment_in_mongo(comment):
         global db
         comments_collection = db['comments']
         if_comment = comments_collection.find_one({'comment_id': comment.id})
-        if (if_comment == None):
+        if (if_comment is None):
             comments_collection.insert_one({
                 'author': str(comment.author),
                 'author_is_blocked': str(comment.author_is_blocked),
@@ -175,7 +170,7 @@ def store_comment_in_mongo(comment):
             })
         else:
             print('Comment exists in mongodb', comment)
-    except Exception as e:
+    except Exception:
         PrintException()
 
 
@@ -228,9 +223,9 @@ def connect_to_mongo():
                 print("Pinged your deployment. You successfully connected to MongoDB!")
                 create_indexes()
                 return db
-            except Exception as e:
+            except Exception:
                 PrintException()
-        except Exception as e:
+        except Exception:
             PrintException()
             print(
                 f"Failed to connect to MongoDB, attempt {retries + 1}/{MAX_RETRIES}. Retrying in {RETRY_DELAY} seconds...")

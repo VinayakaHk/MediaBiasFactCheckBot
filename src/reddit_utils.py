@@ -1,7 +1,5 @@
 import praw
 import re
-import time
-import os
 from src.config import CLIENT_ID, CLIENT_SECRET, USER_AGENT, REDDIT_USERNAME, PASSWORD, SUBREDDIT
 from src.exceptions import logger
 from src.utils import add_prefix_to_paragraphs, mbfc_political_bias, exponential_backoff

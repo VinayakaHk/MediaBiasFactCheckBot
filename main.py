@@ -1,6 +1,5 @@
 import signal
 import threading
-import time
 from dotenv import load_dotenv
 from src.config import SUBREDDIT
 from src.reddit_utils import initialize_reddit, approve_submission
@@ -18,7 +17,7 @@ STALE_THRESHOLD = 300  # consider awaiting_ss stale after 5 minutes
 
 def retry_sweep(reddit, stop_threads: threading.Event):
     """Periodically scan submissions stuck in awaiting_ss for missed SS comments."""
-    subreddit = reddit.subreddit(SUBREDDIT)
+    reddit.subreddit(SUBREDDIT)
     while not stop_threads.is_set():
         try:
             stale = get_stale_awaiting_ss(STALE_THRESHOLD)

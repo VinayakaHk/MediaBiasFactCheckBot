@@ -9,11 +9,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, TimeoutException
 #import options 
 from selenium.webdriver.chrome.options import Options
-from markdownify import markdownify as md
+from pyvirtualdisplay import Display
 
 options = Options()
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
-from pyvirtualdisplay import Display
 
 
 MAX_RETRIES = 5
@@ -67,9 +66,9 @@ def main_function():
 
                 driver = webdriver.Chrome(options=options)
 
-                query = f"give me the latest geopolitical news in this week"
-                encoded_url = urllib.parse.quote(query)
-                driver.get(f"https://gemini.google.com/app")
+                query = "give me the latest geopolitical news in this week"
+                urllib.parse.quote(query)
+                driver.get("https://gemini.google.com/app")
                 time.sleep(10)
                 print(driver.title)
 

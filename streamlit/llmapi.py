@@ -63,7 +63,7 @@ def convert_quotes(obj):
 
 
 def llm_detection(input_string, parent_comment, link_title):
-    if (parent_comment == None):
+    if (parent_comment is None):
         parent_comment = link_title
     try:
         retry = True
@@ -119,7 +119,7 @@ make sure <your reply> is detailed and sophisticated. do not write anything befo
                         json_str2 = json_str2 + ', "reason":"' + reason + '"}'
                         try:
                             json_obj = json.loads(json_str2)
-                        except:
+                        except Exception:
                             print('llm response: ', json_str2)
                             return ({"answer": "0", "reason": "API ERROR"})
                     return json_obj
@@ -128,14 +128,14 @@ make sure <your reply> is detailed and sophisticated. do not write anything befo
             if (response.text):
                 try:
                     response = json.loads(response.text)
-                    response_val = int(llm_result['answer'])
+                    response_val = int(response['answer'])
                     print('response_val = ', response_val)
                     return response
-                except:
+                except Exception:
                     print("llm response : ", response.text)
                     return ({"answer": "0", "reason": "API ERROR"})
             else:
                 return ({"answer": "0", "reason": "API ERROR"})
-    except Exception as e:
+    except Exception:
         PrintException()
         time.sleep(60)

@@ -2,8 +2,8 @@ import time
 import threading
 import praw
 from src.config import (
-    WHITELIST_LLM, SUBMISSION_STATEMENT_TOO_SHORT,
-    SUBMISSION_STATEMENT_FORMAT_INCORRECT, REDDIT_USERNAME
+    SUBMISSION_STATEMENT_TOO_SHORT,
+    SUBMISSION_STATEMENT_FORMAT_INCORRECT
 )
 from src.mongodb import (
     store_comment_in_mongo, comment_body,

@@ -1,8 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Connect to MongoDB
 client = MongoClient('mongodb://192.168.1.50:27017/')

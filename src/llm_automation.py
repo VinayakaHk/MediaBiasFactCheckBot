@@ -15,12 +15,11 @@ from pyvirtualdisplay import Display
 
 
 from src.exceptions import logger
+from .mongodb import store_llm_in_comments
 
 MAX_RETRIES = 3  # Maximum number of retry attempts
 RETRY_DELAY = 2  # Delay (in seconds) between each retry attempt
 
-
-from .mongodb import store_llm_in_comments
 
 def element_strip(elem):
     return elem.text.strip()
@@ -113,9 +112,7 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
             reason = answer.split('True.')
             if len(reason) > 100:
                 reason = reason[:100]
-            subject_body = f"""Rule breaking comment Detected by AI """
             if comment.parent_id == comment.link_id:
-                subject_body = f"""Rule breaking comment removed by AI """
                 comment.mod.remove()
                 removal_message = f"""Hi u/{comment.author}, Your comment has been removed by our AI based system for the following reason : \n\n {
                 reason[1]} \n\n *If you believe it was a mistake, then please [contact our moderators](https://www.reddit.com/message/compose/?to=/r/{os.environ.get('SUBREDDIT')}&subject=Incorrectly removed the comment&message=Comment Link: {comment.link_permalink}{comment.id}%0A%0A Here's why : )* """
@@ -135,6 +132,6 @@ def llm_detection (comment : praw.models.Comment, mod_mail : praw.models.Modmail
         else:
             logger.warning(f"LLM API unexpected response: {answer}")
 
-    except Exception as e:
+    except Exception:
         logger.exception("Error in LLM detection")
 

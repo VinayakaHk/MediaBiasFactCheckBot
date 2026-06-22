@@ -72,8 +72,8 @@ def monitor_comments():
         try:
             print('monitor_comments:')
             for comment in subreddit.stream.comments():
-                if (comment != None):
-                    if not comment.removed and comment.banned_by == None and (comment.author not in whitelisted_authors_from_llm):
+                if (comment is not None):
+                    if not comment.removed and comment.banned_by is None and (comment.author not in whitelisted_authors_from_llm):
                         json_output = llm_detection(comment.body)
                         print(json_output)
                         parsed_data = json.loads(json_output)

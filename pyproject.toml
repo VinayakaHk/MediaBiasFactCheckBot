@@ -7,7 +7,24 @@ requires-python = ">=3.12"
 dependencies = [
     "feedparser",
     "googlenewsdecoder>=0.1.7",
+    "markdownify>=1.2.2",
     "praw",
+    "pymongo>=4.17.0",
     "python-dotenv",
+    "pyvirtualdisplay>=3.0",
     "requests",
+    "selenium>=4.45.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "ruff>=0.11.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 120

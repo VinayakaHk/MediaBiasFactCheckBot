@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 from pymongo import MongoClient
-from collections import Counter
 from textblob import TextBlob
 
 # Connect to MongoDB
