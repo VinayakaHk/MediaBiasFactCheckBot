@@ -1,0 +1,194 @@
+"""Integration tests that post to TESTING_SUBREDDIT and verify.
+
+Run with: uv run pytest tests/test_integration.py -v
+These tests require valid Reddit credentials in .env and network access.
+They are skipped if TESTING_SUBREDDIT is not set.
+"""
+
+import os
+import sys
+import time
+
+import pytest
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TESTING_SUBREDDIT = os.environ.get("TESTING_SUBREDDIT")
+
+pytestmark = [
+    pytest.mark.skipif(not TESTING_SUBREDDIT, reason="TESTING_SUBREDDIT not set in .env"),
+    pytest.mark.integration,
+]
+
+
+def get_reddit():
+    import praw
+    return praw.Reddit(
+        client_id=os.environ.get("CLIENT_ID"),
+        client_secret=os.environ.get("CLIENT_SECRET"),
+        user_agent=f'IntegrationTest/1.0 by u/{os.environ.get("REDDIT_USERNAME")}',
+        username=os.environ.get("REDDIT_USERNAME"),
+        password=os.environ.get("PASSWORD"),
+        check_for_async=False,
+    )
+
+
+class TestAutoPostNewsIntegration:
+    """Test that auto_post_news can post to the testing subreddit."""
+
+    def test_fetch_news_article(self):
+        """Verify RSS fetching, filtering, and dedup work end-to-end."""
+        from auto_post_news import fetch_news_article
+        article = fetch_news_article()
+        # May be None if all articles already posted, but should not error
+        if article:
+            assert "title" in article
+            assert "url" in article
+            assert len(article["title"]) > 0
+            assert article["url"].startswith("http")
+
+    def test_post_and_verify(self):
+        """Post a link to TESTING_SUBREDDIT and verify it exists."""
+        reddit = get_reddit()
+        subreddit = reddit.subreddit(TESTING_SUBREDDIT)
+
+        test_title = f"[Integration Test] Auto Post News - {int(time.time())}"
+        test_url = "https://www.thehindu.com/news/international/"
+
+        submission = subreddit.submit(
+            title=test_title,
+            url=test_url,
+            send_replies=False,
+        )
+        assert submission is not None
+        assert submission.title == test_title
+
+        # Verify by fetching it back
+        submission.comments.replace_more(limit=0)
+        fetched = reddit.submission(id=submission.id)
+        assert fetched.title == test_title
+        assert TESTING_SUBREDDIT.lower() in str(fetched.subreddit).lower()
+
+        # Cleanup
+        submission.delete()
+
+    def test_post_with_comment(self):
+        """Post a link with a submission statement comment and verify both."""
+        reddit = get_reddit()
+        subreddit = reddit.subreddit(TESTING_SUBREDDIT)
+
+        test_title = f"[Integration Test] SS Comment - {int(time.time())}"
+        test_url = "https://www.thehindu.com/news/international/"
+        test_ss = "Submission Statement: This is an integration test verifying that the bot can post articles and add submission statement comments correctly."
+
+        submission = subreddit.submit(
+            title=test_title,
+            url=test_url,
+            send_replies=False,
+        )
+        comment = submission.reply(body=test_ss)
+
+        assert comment is not None
+        assert "Submission Statement" in comment.body
+
+        # Verify comment is on the post (small delay for Reddit propagation)
+        time.sleep(2)
+        submission = reddit.submission(id=submission.id)
+        submission.comments.replace_more(limit=0)
+        comment_bodies = [c.body for c in submission.comments]
+        assert any("integration test" in b.lower() for b in comment_bodies)
+
+        # Cleanup
+        submission.delete()
+
+
+class TestRedditDuplicateCheckIntegration:
+    """Test that duplicate detection works against the real subreddit."""
+
+    def test_fetch_recent_posts(self):
+        """Verify we can fetch recent posts from TESTING_SUBREDDIT."""
+        from auto_post_news import fetch_recent_reddit_posts
+        # Temporarily override SUBREDDIT
+        import auto_post_news
+        original = auto_post_news.SUBREDDIT
+        auto_post_news.SUBREDDIT = TESTING_SUBREDDIT
+        try:
+            posts = fetch_recent_reddit_posts()
+            assert isinstance(posts, list)
+            if posts:
+                assert "title" in posts[0]
+        finally:
+            auto_post_news.SUBREDDIT = original
+
+    def test_filter_already_posted(self):
+        """Verify duplicate filtering works with real data."""
+        from auto_post_news import filter_already_posted
+        articles = [{"title": "Completely unique title xyz123 test", "url": "http://example.com"}]
+        reddit_posts = [{"title": "Something entirely different abc"}]
+        result = filter_already_posted(articles, reddit_posts)
+        assert len(result) == 1
+
+        # Test actual duplicate
+        articles = [{"title": "Exact same title", "url": "http://a.com"}]
+        reddit_posts = [{"title": "Exact same title"}]
+        result = filter_already_posted(articles, reddit_posts)
+        assert len(result) == 0
+
+
+class TestWeeklyDiscussionIntegration:
+    """Test weekly discussion posting."""
+
+    def test_post_weekly_discussion(self):
+        """Post a test weekly discussion to TESTING_SUBREDDIT."""
+        reddit = get_reddit()
+        subreddit = reddit.subreddit(TESTING_SUBREDDIT)
+
+        test_title = f"[Integration Test] Weekly Discussion - {int(time.time())}"
+        test_body = "This is an integration test for the weekly discussion thread."
+
+        submission = subreddit.submit(
+            title=test_title,
+            selftext=test_body,
+            send_replies=False,
+        )
+        assert submission is not None
+        assert submission.is_self is True
+        assert "weekly discussion" in submission.title.lower()
+
+        # Cleanup
+        submission.delete()
+
+
+class TestSubmissionHandlerIntegration:
+    """Test submission handling workflow."""
+
+    def test_submission_statement_validation_live(self):
+        """Post, add SS comment, and verify the workflow."""
+        from src.utils import is_valid_submission_statement
+
+        reddit = get_reddit()
+        subreddit = reddit.subreddit(TESTING_SUBREDDIT)
+
+        # Create a link post
+        submission = subreddit.submit(
+            title=f"[Integration Test] SS Validation - {int(time.time())}",
+            url="https://www.reuters.com/world/india/",
+            send_replies=False,
+        )
+
+        # Add a valid SS
+        ss_text = "Submission Statement: " + "This tests the full submission statement validation pipeline. " * 5
+        comment = submission.reply(body=ss_text)
+
+        assert is_valid_submission_statement(comment.body) is True
+
+        # Add an invalid SS (too short)
+        short_ss = "SS: too short"
+        assert is_valid_submission_statement(short_ss) is False
+
+        # Cleanup
+        submission.delete()

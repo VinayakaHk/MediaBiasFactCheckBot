@@ -26,6 +26,8 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+markers = ["integration: tests that hit real Reddit API (deselect with -m 'not integration')"]
+addopts = "-m 'not integration'"
 
 [tool.ruff]
 line-length = 120
