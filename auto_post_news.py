@@ -65,8 +65,8 @@ RSS_FEEDS = [
     "https://www.firstpost.com/commonfeeds/v1/mfp/rss/world.xml",
     "https://timesofindia.indiatimes.com/rssfeeds/1898055.cms",
     "https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml",
-    "https://news.google.com/rss/search?q=site:theprint.in/diplomacy&hl=en-IN&gl=IN&ceid=IN:en",
-    "https://news.google.com/rss/search?q=site:https://www.reuters.com/world/india/&hl=en-IN&gl=IN&ceid=IN:en",
+    "https://news.google.com/rss/search?q=site:theprint.in/diplomacy+when:2d&hl=en-IN&gl=IN&ceid=IN:en",
+    "https://news.google.com/rss/search?q=site:https://www.reuters.com/world/india/+when:2d&hl=en-IN&gl=IN&ceid=IN:en",
 ]
 
 INDIA_PATTERN = re.compile(r"\bindia\b|indian|modi|jaishankar|new delhi", re.IGNORECASE)
