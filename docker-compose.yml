@@ -5,8 +5,11 @@ services:
     image: mongodb/mongodb-community-server:latest
     container_name: mediabiasfactcheckbot-mongodb
     restart: unless-stopped
+    environment:
+      LD_PRELOAD: /usr/lib/fake_uname.so
     volumes:
       - mongodb-data:/data/db
+      - ./fake_uname.so:/usr/lib/fake_uname.so:ro
     ports:
       - "27017:27017"
 
@@ -22,25 +25,31 @@ services:
     depends_on:
       - mongodb
 
-  streamlit:
+  dashboard:
     image: mediabiasfactcheckbot:latest
     build: .
+    container_name: mediabiasfactcheckbot-dashboard
     restart: unless-stopped
+    user: "1000:1000"
+    group_add:
+      - "984"
     env_file:
       - .env
     environment:
       MONGODB: mongodb://mongodb:27017
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./cron.log:/app/cron.log:ro
     command:
       - streamlit
       - run
-      - streamlit/mongodb_streamlit_submissions.py
+      - streamlit/app.py
       - --server.address=0.0.0.0
       - --server.port=8501
     ports:
       - "8501:8501"
     depends_on:
       - mongodb
-    profiles: ["dashboard"]
 
 volumes:
   mongodb-data:

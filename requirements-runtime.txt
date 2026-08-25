@@ -62,6 +62,13 @@ Werkzeug==3.1.8
 # --- RSS parsing in auto_post_news.py (missing from requirements.txt!) ------
 feedparser==6.0.12
 
+# --- Streamlit dashboard -----------------------------------------------------
+streamlit>=1.45.0
+streamlit-autorefresh>=1.0.1
+
+# --- Docker SDK (for status page to query sibling containers) ---------------
+docker>=7.0.0
+
 # --- Misc -------------------------------------------------------------------
 packaging==26.2
 typing_extensions==4.15.0

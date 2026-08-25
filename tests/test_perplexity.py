@@ -37,96 +37,133 @@ class TestFormatForReddit:
 
 
 class TestQueryPerplexity:
+    @patch("src.perplexity.time.sleep")
+    @patch("src.perplexity._get_perplexity_cookies")
     @patch("src.perplexity._get_driver")
-    def test_successful_query(self, mock_get_driver):
+    def test_successful_query(self, mock_get_driver, mock_cookies, mock_sleep):
         """Test that query_perplexity scrapes and formats correctly."""
         mock_element = MagicMock()
+        mock_element.text = "India signed a deal with Iran. This is a long enough text to pass the 50 char check."
         mock_element.get_attribute.return_value = "<p>India signed a deal [1](https://reuters.com/article) with Iran.</p>"
 
         mock_driver = MagicMock()
         mock_get_driver.return_value = mock_driver
+        mock_cookies.return_value = [{"name": "test", "value": "val", "domain": ".perplexity.ai", "path": "/", "secure": True}]
 
-        # WebDriverWait returns elements
-        with patch("src.perplexity.WebDriverWait") as mock_wait:
-            mock_wait.return_value.until.return_value = [mock_element]
-            result = query_perplexity("test query")
+        # find_elements returns the prose element with stable text (triggers after 2 stable polls)
+        mock_driver.find_elements.return_value = [mock_element]
+
+        result = query_perplexity("test query")
 
         assert "India signed a deal" in result
         assert "reuters.com" in result
-        mock_driver.get.assert_called_once()
         mock_driver.quit.assert_called()
 
     @patch("src.perplexity.time.sleep")
+    @patch("src.perplexity._get_perplexity_cookies")
     @patch("src.perplexity._get_driver")
-    def test_retries_on_timeout(self, mock_get_driver, mock_sleep):
+    def test_retries_on_timeout(self, mock_get_driver, mock_cookies, mock_sleep):
         """Test that it retries on TimeoutException."""
         from selenium.common.exceptions import TimeoutException
 
         mock_driver = MagicMock()
         mock_get_driver.return_value = mock_driver
+        mock_cookies.return_value = []
 
-        with patch("src.perplexity.WebDriverWait") as mock_wait:
-            mock_wait.return_value.until.side_effect = TimeoutException("timeout")
-            result = query_perplexity("test query")
+        # driver.get raises TimeoutException (even the initial perplexity.ai load)
+        mock_driver.get.side_effect = TimeoutException("timeout")
+        # find_elements returns nothing (no prose)
+        mock_driver.find_elements.return_value = []
+
+        result = query_perplexity("test query")
 
         assert result == ""
-        assert mock_get_driver.call_count == 10  # MAX_RETRIES
+        assert mock_get_driver.call_count == 3  # MAX_RETRIES
 
     @patch("src.perplexity.time.sleep")
+    @patch("src.perplexity._get_perplexity_cookies")
     @patch("src.perplexity._get_driver")
-    def test_retries_on_webdriver_exception(self, mock_get_driver, mock_sleep):
+    def test_retries_on_webdriver_exception(self, mock_get_driver, mock_cookies, mock_sleep):
         """Test that it retries on WebDriverException."""
         from selenium.common.exceptions import WebDriverException
 
         mock_driver = MagicMock()
         mock_get_driver.return_value = mock_driver
+        mock_cookies.return_value = []
 
-        with patch("src.perplexity.WebDriverWait") as mock_wait:
-            mock_wait.return_value.until.side_effect = WebDriverException("crash")
-            result = query_perplexity("test query")
+        mock_driver.get.side_effect = WebDriverException("crash")
+
+        result = query_perplexity("test query")
 
         assert result == ""
-        assert mock_driver.quit.call_count == 10
+        assert mock_driver.quit.call_count == 3  # MAX_RETRIES
 
     @patch("src.perplexity.time.sleep")
+    @patch("src.perplexity._get_perplexity_cookies")
     @patch("src.perplexity._get_driver")
-    def test_returns_empty_on_no_elements(self, mock_get_driver, mock_sleep):
-        """Test returns empty string when dynamic_elements is empty."""
+    def test_returns_empty_on_no_elements(self, mock_get_driver, mock_cookies, mock_sleep):
+        """Test returns empty string when no prose elements found."""
         mock_driver = MagicMock()
         mock_get_driver.return_value = mock_driver
+        mock_cookies.return_value = []
 
-        with patch("src.perplexity.WebDriverWait") as mock_wait:
-            # .until() always returns empty list — `if dynamic_elements` is False
-            mock_wait.return_value.until.return_value = []
-            result = query_perplexity("test query")
+        # find_elements always returns empty
+        mock_driver.find_elements.return_value = []
+
+        result = query_perplexity("test query")
 
         assert result == ""
 
+    @patch("src.perplexity.time.sleep")
+    @patch("src.perplexity._get_perplexity_cookies")
     @patch("src.perplexity._get_driver")
-    def test_constructs_correct_url(self, mock_get_driver):
+    def test_constructs_correct_url(self, mock_get_driver, mock_cookies, mock_sleep):
         """Test that the URL is correctly encoded."""
         mock_driver = MagicMock()
         mock_get_driver.return_value = mock_driver
+        mock_cookies.return_value = []
+        mock_driver.find_elements.return_value = []
 
-        with patch("src.perplexity.WebDriverWait") as mock_wait:
-            mock_wait.return_value.until.return_value = []
-            query_perplexity("india china border")
+        query_perplexity("india china border")
 
-        call_url = mock_driver.get.call_args[0][0]
-        assert "perplexity.ai/search?q=" in call_url
-        assert "india%20china%20border" in call_url
+        # Second call to driver.get is the search URL (first is perplexity.ai home)
+        calls = mock_driver.get.call_args_list
+        search_url = calls[1][0][0]
+        assert "perplexity.ai/search?q=" in search_url
+        assert "india%20china%20border" in search_url
 
+    @patch("src.perplexity.time.sleep")
+    @patch("src.perplexity._get_perplexity_cookies")
     @patch("src.perplexity._get_driver")
-    def test_driver_quit_called_in_finally(self, mock_get_driver):
+    def test_driver_quit_called_in_finally(self, mock_get_driver, mock_cookies, mock_sleep):
         """Test driver is always cleaned up."""
+        mock_element = MagicMock()
+        mock_element.text = "This is a response that is long enough to pass the fifty character minimum check."
+        mock_element.get_attribute.return_value = "<p>text</p>"
+
         mock_driver = MagicMock()
         mock_get_driver.return_value = mock_driver
+        mock_cookies.return_value = []
+        mock_driver.find_elements.return_value = [mock_element]
 
-        with patch("src.perplexity.WebDriverWait") as mock_wait:
-            mock_element = MagicMock()
-            mock_element.get_attribute.return_value = "<p>text</p>"
-            mock_wait.return_value.until.return_value = [mock_element]
-            query_perplexity("test")
+        query_perplexity("test")
 
         mock_driver.quit.assert_called()
 
+    @patch("src.perplexity.time.sleep")
+    @patch("src.perplexity._get_perplexity_cookies")
+    @patch("src.perplexity._get_driver")
+    def test_sign_in_wall_triggers_retry(self, mock_get_driver, mock_cookies, mock_sleep):
+        """Test that sign-in wall message triggers a retry."""
+        mock_element = MagicMock()
+        mock_element.text = "Sign up and repeat your request."
+
+        mock_driver = MagicMock()
+        mock_get_driver.return_value = mock_driver
+        mock_cookies.return_value = []
+        mock_driver.find_elements.return_value = [mock_element]
+
+        result = query_perplexity("test query")
+
+        assert result == ""
+        assert mock_get_driver.call_count == 3  # MAX_RETRIES
