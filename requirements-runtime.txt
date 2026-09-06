@@ -61,6 +61,7 @@ Werkzeug==3.1.8
 
 # --- RSS parsing in auto_post_news.py (missing from requirements.txt!) ------
 feedparser==6.0.12
+googlenewsdecoder>=0.1.7
 
 # --- Streamlit dashboard -----------------------------------------------------
 streamlit>=1.45.0

@@ -48,8 +48,15 @@ CRON_LOG_PATH = "/app/cron.log"  # mounted read-only from host
 
 @st.cache_resource
 def get_docker_client():
-    """Connect to Docker daemon via mounted socket."""
+    """Connect to Docker daemon.
+
+    Prefers DOCKER_HOST (e.g. a read-only docker-socket-proxy) when set,
+    otherwise falls back to the local unix socket.
+    """
     try:
+        docker_host = os.environ.get("DOCKER_HOST")
+        if docker_host:
+            return docker.DockerClient(base_url=docker_host)
         return docker.DockerClient(base_url="unix:///var/run/docker.sock")
     except Exception:
         return None

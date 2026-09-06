@@ -25,21 +25,48 @@ services:
     depends_on:
       - mongodb
 
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    container_name: mediabiasfactcheckbot-docker-proxy
+    restart: unless-stopped
+    environment:
+      # Read-only surface: allow listing/inspecting containers + their
+      # logs/stats, deny everything that mutates the daemon.
+      CONTAINERS: "1"
+      SERVICES: "0"
+      TASKS: "0"
+      IMAGES: "0"
+      NETWORKS: "0"
+      VOLUMES: "0"
+      INFO: "1"
+      VERSION: "1"
+      # Block all state-changing POST calls (start/stop/exec/create/kill).
+      POST: "0"
+      # Allow the GET endpoints the dashboard needs for logs & live stats.
+      ALLOW_RESTARTS: "0"
+      EXEC: "0"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # The proxy is the only thing that touches the real socket; keep it on an
+    # internal-only footprint (no host port published).
+    expose:
+      - "2375"
+
   dashboard:
     image: mediabiasfactcheckbot:latest
     build: .
     container_name: mediabiasfactcheckbot-dashboard
     restart: unless-stopped
     user: "1000:1000"
-    group_add:
-      - "984"
     env_file:
       - .env
     environment:
       MONGODB: mongodb://mongodb:27017
+      # Talk to Docker only through the read-only proxy, never the raw socket.
+      DOCKER_HOST: tcp://docker-socket-proxy:2375
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./cron.log:/app/cron.log:ro
+      - /home/vinayakahk/snap/firefox/common/.mozilla/firefox/6n1dsopf.default/cookies.sqlite:/home/appuser/snap/firefox/common/.mozilla/firefox/6n1dsopf.default/cookies.sqlite:ro
     command:
       - streamlit
       - run
@@ -50,6 +77,7 @@ services:
       - "8501:8501"
     depends_on:
       - mongodb
+      - docker-socket-proxy
 
 volumes:
   mongodb-data:
